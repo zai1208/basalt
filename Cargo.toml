@@ -1,8 +1,5 @@
-[package]
-name = "basalt"
-version = "0.1.0"
-edition = "2021"
+[workspace]
+members = ["basalt", "basalt-core"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
+[workspace.dependencies]
+basalt-core = { path = "basalt-core", version = "0.1.0" }
