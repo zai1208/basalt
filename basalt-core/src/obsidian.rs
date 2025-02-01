@@ -15,9 +15,7 @@
 //!
 //! _ = config.vault_by_name("Obsidian");
 //! ```
-use dirs::config_local_dir;
-
-use std::{io, path::PathBuf, result};
+use std::{io, result};
 
 mod config;
 mod note;
@@ -66,22 +64,4 @@ pub enum Error {
     /// I/O error, from [`std::io::Error`].
     #[error("I/O error: {0}")]
     Io(#[from] io::Error),
-}
-
-/// Returns the system path to Obsidian's config folder, if any.
-///
-/// For reference:
-/// - macOS:  `/Users/username/Library/Application Support/obsidian`
-/// - Windows: `%APPDATA%\Obsidian\`
-/// - Linux:   `$XDG_CONFIG_HOME/Obsidian/` or `~/.config/Obsidian/`
-///
-/// More info: [https://help.obsidian.md/Files+and+folders/How+Obsidian+stores+data]
-fn obsidian_config_dir() -> Option<PathBuf> {
-    #[cfg(target_os = "macos")]
-    const OBSIDIAN_CONFIG_DIR_NAME: &str = "obsidian";
-
-    #[cfg(any(target_os = "windows", target_os = "linux"))]
-    const OBSIDIAN_CONFIG_DIR_NAME: &str = "Obsidian";
-
-    config_local_dir().map(|config_path| config_path.join(OBSIDIAN_CONFIG_DIR_NAME))
 }
