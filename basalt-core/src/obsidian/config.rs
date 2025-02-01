@@ -138,21 +138,19 @@ impl<'de> Deserialize<'de> for ObsidianConfig {
             vaults: HashMap<String, Vault>,
         }
 
-        impl Into<ObsidianConfig> for Json {
-            fn into(self) -> ObsidianConfig {
+        impl From<Json> for ObsidianConfig {
+            fn from(value: Json) -> Self {
                 ObsidianConfig {
-                    vaults: self
+                    vaults: value
                         .vaults
-                        .into_iter()
-                        .map(|(_, vault)| (vault.name.clone(), vault))
+                        .into_values()
+                        .map(|vault| (vault.name.clone(), vault))
                         .collect(),
                 }
             }
         }
 
-        Json::from(Deserialize::deserialize(deserializer)?)
-            .try_into()
-            .map_err(serde::de::Error::custom)
+        Ok(Json::from(Deserialize::deserialize(deserializer)?).into())
     }
 }
 
