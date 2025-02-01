@@ -68,10 +68,7 @@ impl Vault {
     ///
     /// let alphabetically = |a: &Note, b: &Note| a.name.to_lowercase().cmp(&b.name.to_lowercase());
     ///
-    /// let notes = vault.notes_sorted_by(alphabetically);
-    /// for note in notes {
-    ///     println!("{}", note.name);
-    /// }
+    /// _ = vault.notes_sorted_by(alphabetically);
     /// ```
     pub fn notes_sorted_by(&self, compare: impl Fn(&Note, &Note) -> Ordering) -> Vec<Note> {
         let mut notes: Vec<Note> = self.notes().collect();
