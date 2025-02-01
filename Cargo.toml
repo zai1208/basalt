@@ -1,5 +1,6 @@
 [workspace]
 members = ["basalt", "basalt-core"]
+resolver = "2"
 
 [workspace.dependencies]
 basalt-core = { path = "basalt-core", version = "0.1.0" }
