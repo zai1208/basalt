@@ -51,7 +51,7 @@ impl Vault {
             .filter_map(|entry| Option::<Note>::from(DirEntry::from(entry.ok()?)))
     }
 
-    /// Returns a sorted vector [Vec<Note>] of all notes in the vault, sorted according to the
+    /// Returns a sorted vector [`Vec<Note>`] of all notes in the vault, sorted according to the
     /// provided comparison function.
     ///
     /// # Examples
