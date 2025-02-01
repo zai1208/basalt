@@ -1,5 +1,5 @@
 [workspace]
-members = ["basalt", "basalt-core"]
+members = ["basalt-core"]
 resolver = "2"
 
 [workspace.dependencies]
