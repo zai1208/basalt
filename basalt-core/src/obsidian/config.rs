@@ -76,6 +76,30 @@ impl ObsidianConfig {
     pub fn get_vault_by_name(&self, name: &str) -> Option<&Vault> {
         self.vaults.get(name)
     }
+
+    /// Gets the currently opened vault marked by Obsidian.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use basalt_core::obsidian::{ObsidianConfig, Vault};
+    ///
+    /// let config = ObsidianConfig::from([
+    ///     (
+    ///         "Obsidian",
+    ///         Vault {
+    ///             open: true,
+    ///             ..Vault::default()
+    ///         },
+    ///     ),
+    ///     ("Work", Vault::default()),
+    /// ]);
+    ///
+    /// _ = config.get_open_vault();
+    /// ```
+    pub fn get_open_vault(&self) -> Option<&Vault> {
+        self.vaults.values().find(|vault| vault.open)
+    }
 }
 
 impl<const N: usize> From<[(&str, Vault); N]> for ObsidianConfig {

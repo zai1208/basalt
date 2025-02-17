@@ -12,5 +12,5 @@
 #![deny(missing_docs)]
 #![doc(html_root_url = "https://docs.rs/basalt-core")]
 
-/// Provides Obisidian interoperability operations
+/// Provides Obsidian interoperability operations
 pub mod obsidian;
