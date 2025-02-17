@@ -71,9 +71,9 @@ impl ObsidianConfig {
     ///     ("Work", Vault::default()),
     /// ]);
     ///
-    /// _ = config.vault_by_name("Obsidian");
+    /// _ = config.get_vault_by_name("Obsidian");
     /// ```
-    pub fn vault_by_name(&self, name: &str) -> Option<&Vault> {
+    pub fn get_vault_by_name(&self, name: &str) -> Option<&Vault> {
         self.vaults.get(name)
     }
 }

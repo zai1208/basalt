@@ -20,5 +20,5 @@ let config = ObsidianConfig::from([
   ("My Vault", Vault::default()),
 ]);
 
-_ = config.vault_by_name("Obsidian");
+_ = config.get_vault_by_name("Obsidian");
 ```
