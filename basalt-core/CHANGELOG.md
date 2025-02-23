@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1 (2025-02-23)
+
+### Added
+
+- [Add markdown parser and custom AST nodes](https://github.com/erikjuhani/basalt/commit/125bf5d4637f20b9816cb383c56c750a3e35d40c)
+
 ## 0.2.0 (2025-02-18)
 
 ### Added
