@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.2 (2025-02-27)
+
+### Added
+
+- [Add blank implementations for `TextNode` and `Text`](https://github.com/erikjuhani/basalt/commit/a252f62930ec59f21255d08278762734eb312cef)
+
+### Fixed
+
+- [Fix skipping text nodes in markdown parser](https://github.com/erikjuhani/basalt/commit/3bc112edd2b452ea7093d0e71fcfa0d02bc0b9c4)
+
 ## 0.2.1 (2025-02-23)
 
 ### Added
