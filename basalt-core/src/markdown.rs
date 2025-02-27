@@ -432,9 +432,7 @@ impl<'a> Parser<'a> {
             | Tag::MetadataBlock(_)
             | Tag::DefinitionList
             | Tag::DefinitionListTitle
-            | Tag::DefinitionListDefinition => self.push_node(Node::Paragraph {
-                text: Text::default(),
-            }),
+            | Tag::DefinitionListDefinition => {}
         }
     }
 
@@ -603,24 +601,6 @@ mod tests {
                     h6("Heading 6"),
                 ],
             ),
-            (
-                indoc! {r#"Paragraph
-
-                > BlockQuote
-                >
-                > - List item in BlockQuote
-                "#},
-                vec![
-                    p("Paragraph"),
-                    blockquote(vec![
-                        p("BlockQuote"),
-                        Node::Paragraph {
-                            text: Text::default(),
-                        },
-                        item("List item in BlockQuote"),
-                    ]),
-                ],
-            ),
             // TODO: Implement correct test case when `- [?] ` task item syntax is supported
             // Now we interpret it as a regular paragraph
             (
@@ -637,6 +617,33 @@ mod tests {
                     task("Task"),
                     completed_task("Completed task"),
                     p("[?] Completed task"),
+                ],
+            ),
+            (
+                indoc! {r#"## Quotes
+
+                You _can_ quote text by adding a `>` symbols before the text.
+
+                > Human beings face ever more complex and urgent problems, and their effectiveness in dealing with these problems is a matter that is critical to the stability and continued progress of society.
+                >
+                >- Doug Engelbart, 1961
+                "#},
+                vec![
+                    h2("Quotes"),
+                    Node::Paragraph {
+                        text: vec![
+                            TextNode::new("You ".into(), None),
+                            TextNode::new("can".into(), None),
+                            TextNode::new(" quote text by adding a ".into(), None),
+                            TextNode::new(">".into(), Some(Style::Code)),
+                            TextNode::new(" symbols before the text.".into(), None),
+                        ]
+                        .into(),
+                    },
+                    blockquote(vec![
+                        p("Human beings face ever more complex and urgent problems, and their effectiveness in dealing with these problems is a matter that is critical to the stability and continued progress of society."),
+                        item("Doug Engelbart, 1961")
+                    ]),
                 ],
             ),
         ];
