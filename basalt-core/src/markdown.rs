@@ -151,6 +151,21 @@ pub struct TextNode {
     pub style: Option<Style>,
 }
 
+impl From<&str> for TextNode {
+    fn from(value: &str) -> Self {
+        value.to_string().into()
+    }
+}
+
+impl From<String> for TextNode {
+    fn from(value: String) -> Self {
+        Self {
+            content: value,
+            ..Default::default()
+        }
+    }
+}
+
 impl TextNode {
     /// Creates a new [`TextNode`] from `content` and optional [`Style`].
     pub fn new(content: String, style: Option<Style>) -> Self {
@@ -164,7 +179,31 @@ pub struct Text(Vec<TextNode>);
 
 impl From<&str> for Text {
     fn from(value: &str) -> Self {
-        Self(vec![TextNode::new(String::from(value), None)])
+        TextNode::from(value).into()
+    }
+}
+
+impl From<String> for Text {
+    fn from(value: String) -> Self {
+        TextNode::from(value).into()
+    }
+}
+
+impl From<TextNode> for Text {
+    fn from(value: TextNode) -> Self {
+        Self([value].to_vec())
+    }
+}
+
+impl From<Vec<TextNode>> for Text {
+    fn from(value: Vec<TextNode>) -> Self {
+        Self(value)
+    }
+}
+
+impl From<&[TextNode]> for Text {
+    fn from(value: &[TextNode]) -> Self {
+        Self(value.to_vec())
     }
 }
 
@@ -477,12 +516,8 @@ impl<'a> Parser<'a> {
 mod tests {
     use indoc::indoc;
 
-    fn text(str: &str) -> Text {
-        Text(vec![TextNode::new(String::from(str), None)])
-    }
-
     fn p(str: &str) -> Node {
-        Node::Paragraph { text: text(str) }
+        Node::Paragraph { text: str.into() }
     }
 
     fn blockquote(nodes: Vec<Node>) -> Node {
@@ -492,28 +527,28 @@ mod tests {
     fn item(str: &str) -> Node {
         Node::Item {
             kind: None,
-            text: text(str),
+            text: str.into(),
         }
     }
 
     fn task(str: &str) -> Node {
         Node::Item {
             kind: Some(ItemKind::Unchecked),
-            text: text(str),
+            text: str.into(),
         }
     }
 
     fn completed_task(str: &str) -> Node {
         Node::Item {
             kind: Some(ItemKind::HardChecked),
-            text: text(str),
+            text: str.into(),
         }
     }
 
     fn heading(level: HeadingLevel, str: &str) -> Node {
         Node::Heading {
             level,
-            text: text(str),
+            text: str.into(),
         }
     }
 
