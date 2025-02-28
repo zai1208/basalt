@@ -1,0 +1,8 @@
+[package]
+name = "basalt-widgets"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ratatui = { version = "0.29.0", default-features = false, features = ["unstable-widget-ref"] }
+basalt-core = { workspace = true }
