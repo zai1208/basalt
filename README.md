@@ -5,3 +5,5 @@
 <hr/>
 
 TUI Application to manage Obsidian vaults and notes directly from the terminal ✨.
+
+<img src="assets/basalt_demo.gif">
