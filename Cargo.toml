@@ -1,6 +1,6 @@
 [workspace]
-members = ["basalt-core"]
+members = ["basalt-core", "basalt-widgets"]
 resolver = "2"
 
 [workspace.dependencies]
-basalt-core = { path = "basalt-core", version = "0.1.0" }
+basalt-core = { path = "basalt-core", version = "0.2.2" }
