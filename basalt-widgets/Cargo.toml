@@ -1,7 +1,14 @@
 [package]
 name = "basalt-widgets"
+description = """
+Provides the custom ratatui widgets for Basalt TUI application
+"""
+repository = "https://github.com/erikjuhani/basalt"
+readme = "README.md"
+license = "MIT"
 version = "0.1.0"
 edition = "2021"
+keywords = ["tui", "markdown", "ratatui"]
 
 [dependencies]
 ratatui = { version = "0.29.0", default-features = false, features = ["unstable-widget-ref"] }
