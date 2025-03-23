@@ -16,18 +16,24 @@
 //! # Example
 //!
 //! ```
-//! use basalt_core::markdown::{from_str, Node, HeadingLevel, Text};
+//! use basalt_core::markdown::{from_str, Range, Node, MarkdownNode, HeadingLevel, Text};
 //!
 //! let markdown = "# My Heading\n\nSome text.";
 //! let nodes = from_str(markdown);
 //!
 //! assert_eq!(nodes, vec![
-//!   Node::Heading {
-//!     level: HeadingLevel::H1,
-//!     text: Text::from("My Heading"),
+//!   Node {
+//!     markdown_node: MarkdownNode::Heading {
+//!       level: HeadingLevel::H1,
+//!       text: Text::from("My Heading"),
+//!     },
+//!     source_range: Range { start: 0, end: 13 },
 //!   },
-//!   Node::Paragraph {
-//!     text: Text::from("Some text."),
+//!   Node {
+//!     markdown_node: MarkdownNode::Paragraph {
+//!       text: Text::from("Some text."),
+//!     },
+//!     source_range: Range { start: 14, end: 24 },
 //!   },
 //! ])
 //! ```

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- [Add `source_range` field to Nodes](https://github.com/erikjuhani/basalt/commit/1c199259f3831768e1823a34c9165c489f71eed0)
+
 ## 0.2.2 (2025-02-27)
 
 ### Added
