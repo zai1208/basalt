@@ -13,18 +13,24 @@
 //! At the simplest level, you can parse a Markdown string by calling the [`from_str`] function:
 //!
 //! ```
-//! use basalt_core::markdown::{from_str, Node, HeadingLevel, Text};
+//! use basalt_core::markdown::{from_str, Range, Node, MarkdownNode, HeadingLevel, Text};
 //!
 //! let markdown = "# My Heading\n\nSome text.";
 //! let nodes = from_str(markdown);
 //!
 //! assert_eq!(nodes, vec![
-//!   Node::Heading {
-//!     level: HeadingLevel::H1,
-//!     text: Text::from("My Heading"),
+//!   Node {
+//!     markdown_node: MarkdownNode::Heading {
+//!       level: HeadingLevel::H1,
+//!       text: Text::from("My Heading"),
+//!     },
+//!     source_range: Range { start: 0, end: 13 },
 //!   },
-//!   Node::Paragraph {
-//!     text: Text::from("Some text."),
+//!   Node {
+//!     markdown_node: MarkdownNode::Paragraph {
+//!       text: Text::from("Some text."),
+//!     },
+//!     source_range: Range { start: 14, end: 24 }
 //!   },
 //! ])
 //! ```
@@ -222,10 +228,85 @@ impl Text {
     }
 }
 
+/// A [`std::ops::Range`] type for depicting range in [`crate::markdown`].
+///
+/// # Examples
+///
+/// ```
+/// use basalt_core::markdown::{Node, MarkdownNode, Range, Text};
+///
+/// let node = Node {
+///   markdown_node: MarkdownNode::Paragraph {
+///     text: Text::default(),
+///   },
+///   source_range: Range::default(),
+/// };
+/// ```
+pub type Range<Idx> = std::ops::Range<Idx>;
+
+/// A node in the Markdown AST.
+///
+/// Each `Node` contains a [`MarkdownNode`] variant representing a specific kind of Markdown
+/// element (paragraph, heading, code block, etc.), along with a `source_range` indicating where in
+/// the source text this node occurs.
+///
+/// # Examples
+///
+/// ```
+/// use basalt_core::markdown::{Node, MarkdownNode, Range, Text};
+///
+/// let node = Node::new(
+///   MarkdownNode::Paragraph {
+///     text: Text::default(),
+///   },
+///   0..10,
+/// );
+///
+/// assert_eq!(node.markdown_node, MarkdownNode::Paragraph { text: Text::default() });
+/// assert_eq!(node.source_range, Range { start: 0, end: 10 });
+/// ```
+#[derive(Clone, Debug, PartialEq)]
+pub struct Node {
+    /// The specific Markdown node represented by this node.
+    pub markdown_node: MarkdownNode,
+
+    /// The range in the original source text that this node covers.
+    pub source_range: Range<usize>,
+}
+
+impl Node {
+    /// Creates a new `Node` from the provided [`MarkdownNode`] and source range.
+    pub fn new(markdown_node: MarkdownNode, source_range: Range<usize>) -> Self {
+        Self {
+            markdown_node,
+            source_range,
+        }
+    }
+
+    /// Pushes a [`TextNode`] into the markdown node, if it contains a text buffer.
+    ///
+    /// If the markdown node is a [`MarkdownNode::BlockQuote`], the [`TextNode`] will be pushed
+    /// into the last child [`Node`], if any.
+    /// ```
+    pub(crate) fn push_text_node(&mut self, node: TextNode) {
+        match &mut self.markdown_node {
+            MarkdownNode::Paragraph { text, .. }
+            | MarkdownNode::Heading { text, .. }
+            | MarkdownNode::CodeBlock { text, .. }
+            | MarkdownNode::Item { text, .. } => text.push(node),
+            MarkdownNode::BlockQuote { nodes, .. } => {
+                if let Some(last_node) = nodes.last_mut() {
+                    last_node.push_text_node(node);
+                }
+            }
+        }
+    }
+}
+
 /// The Markdown AST node enumeration.
 #[derive(Clone, Debug, PartialEq)]
 #[allow(missing_docs)]
-pub enum Node {
+pub enum MarkdownNode {
     /// A heading node that represents different heading levels.
     ///
     /// The level is controlled with the [`HeadingLevel`] definition.
@@ -260,35 +341,14 @@ pub enum Node {
     },
 }
 
-impl Node {
-    /// Pushes a [`TextNode`] into this node, if it contains a text buffer.
-    ///
-    /// If the node is a [`BlockQuote`], the [`TextNode`] will be pushed into the last child
-    /// [`Node`], if any.
-    /// ```
-    pub(crate) fn push_text_node(&mut self, node: TextNode) {
-        match self {
-            Node::Paragraph { text, .. }
-            | Node::Heading { text, .. }
-            | Node::CodeBlock { text, .. }
-            | Node::Item { text, .. } => text.push(node),
-            Node::BlockQuote { nodes, .. } => {
-                if let Some(last_node) = nodes.last_mut() {
-                    last_node.push_text_node(node);
-                }
-            }
-        }
-    }
-}
-
-/// Returns `true` if the [`Node`] should be closed upon encountering the given [`TagEnd`].
+/// Returns `true` if the [`MarkdownNode`] should be closed upon encountering the given [`TagEnd`].
 fn matches_tag_end(node: &Node, tag_end: &TagEnd) -> bool {
-    match (node, tag_end) {
-        (Node::Paragraph { .. }, TagEnd::Paragraph)
-        | (Node::Heading { .. }, TagEnd::Heading(..))
-        | (Node::BlockQuote { .. }, TagEnd::BlockQuote(..))
-        | (Node::CodeBlock { .. }, TagEnd::CodeBlock)
-        | (Node::Item { .. }, TagEnd::Item) => true,
+    match (&node.markdown_node, tag_end) {
+        (MarkdownNode::Paragraph { .. }, TagEnd::Paragraph)
+        | (MarkdownNode::Heading { .. }, TagEnd::Heading(..))
+        | (MarkdownNode::BlockQuote { .. }, TagEnd::BlockQuote(..))
+        | (MarkdownNode::CodeBlock { .. }, TagEnd::CodeBlock)
+        | (MarkdownNode::Item { .. }, TagEnd::Item) => true,
         _ => false,
     }
 }
@@ -300,22 +360,28 @@ fn matches_tag_end(node: &Node, tag_end: &TagEnd) -> bool {
 /// # Examples
 ///
 /// ```
-/// use basalt_core::markdown::{from_str, Node, HeadingLevel, Text};
+/// use basalt_core::markdown::{from_str, Range, Node, MarkdownNode, HeadingLevel, Text};
 ///
 /// let markdown = "# My Heading\n\nSome text.";
 /// let nodes = from_str(markdown);
 ///
 /// assert_eq!(nodes, vec![
-///   Node::Heading {
-///     level: HeadingLevel::H1,
-///     text: Text::from("My Heading"),
+///   Node {
+///     markdown_node: MarkdownNode::Heading {
+///       level: HeadingLevel::H1,
+///       text: Text::from("My Heading"),
+///     },
+///     source_range: Range { start: 0, end: 13 },
 ///   },
-///   Node::Paragraph {
-///     text: Text::from("Some text."),
+///   Node {
+///     markdown_node: MarkdownNode::Paragraph {
+///       text: Text::from("Some text."),
+///     },
+///     source_range: Range { start: 14, end: 24 },
 ///   },
 /// ])
 /// ```
-pub fn from_str<'a>(text: &'a str) -> Vec<Node> {
+pub fn from_str(text: &str) -> Vec<Node> {
     Parser::new(text).parse()
 }
 
@@ -324,31 +390,37 @@ pub fn from_str<'a>(text: &'a str) -> Vec<Node> {
 /// # Examples
 ///
 /// ```
-/// use basalt_core::markdown::{Parser, Node, HeadingLevel, Text};
+/// use basalt_core::markdown::{Parser, Range, Node, MarkdownNode, HeadingLevel, Text};
 ///
 /// let markdown = "# My Heading\n\nSome text.";
 /// let parser = Parser::new(markdown);
 /// let nodes = parser.parse();
 ///
 /// assert_eq!(nodes, vec![
-///   Node::Heading {
-///     level: HeadingLevel::H1,
-///     text: Text::from("My Heading"),
+///   Node {
+///     markdown_node: MarkdownNode::Heading {
+///       level: HeadingLevel::H1,
+///       text: Text::from("My Heading"),
+///     },
+///     source_range: Range { start: 0, end: 13 },
 ///   },
-///   Node::Paragraph {
-///     text: Text::from("Some text."),
+///   Node {
+///     markdown_node: MarkdownNode::Paragraph {
+///       text: Text::from("Some text."),
+///     },
+///     source_range: Range { start: 14, end: 24 },
 ///   },
 /// ])
 /// ```
 pub struct Parser<'a> {
     /// Contains the completed AST [`Node`]s.
     pub output: Vec<Node>,
-    inner: pulldown_cmark::TextMergeStream<'a, pulldown_cmark::Parser<'a>>,
+    inner: pulldown_cmark::TextMergeWithOffset<'a, pulldown_cmark::OffsetIter<'a>>,
     current_node: Option<Node>,
 }
 
 impl<'a> Iterator for Parser<'a> {
-    type Item = Event<'a>;
+    type Item = (Event<'a>, Range<usize>);
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next()
     }
@@ -358,12 +430,13 @@ impl<'a> Parser<'a> {
     /// Creates a new [`Parser`] from a Markdown input string.
     ///
     /// The parser uses [`pulldown_cmark::Parser::new_ext`] with [`Options::all()`] and
-    /// [`pulldown_cmark::TextMergeStream`] internally.
+    /// [`pulldown_cmark::TextMergeWithOffset`] internally.
+    ///
+    /// The offset is required to know where the node appears in the provided source text.
     pub fn new(text: &'a str) -> Self {
-        let parser = pulldown_cmark::TextMergeStream::new(pulldown_cmark::Parser::new_ext(
-            text,
-            Options::all(),
-        ));
+        let parser = pulldown_cmark::TextMergeWithOffset::new(
+            pulldown_cmark::Parser::new_ext(text, Options::all()).into_offset_iter(),
+        );
 
         Self {
             inner: parser,
@@ -375,7 +448,11 @@ impl<'a> Parser<'a> {
     /// Pushes a [`Node`] as a child if the current node is a [`BlockQuote`], otherwise sets it as
     /// the `current_node`.
     fn push_node(&mut self, node: Node) {
-        if let Some(Node::BlockQuote { nodes, .. }) = &mut self.current_node {
+        if let Some(Node {
+            markdown_node: MarkdownNode::BlockQuote { nodes, .. },
+            ..
+        }) = &mut self.current_node
+        {
             nodes.push(node);
         } else {
             self.set_node(&node);
@@ -395,27 +472,42 @@ impl<'a> Parser<'a> {
     }
 
     /// Handles the start of a [`Tag`]. Pushes the matching semantic node to be processed.
-    fn tag(&mut self, tag: Tag<'a>) {
+    fn tag(&mut self, tag: Tag<'a>, range: Range<usize>) {
         match tag {
-            Tag::Paragraph => self.push_node(Node::Paragraph {
-                text: Text::default(),
-            }),
-            Tag::Heading { level, .. } => self.push_node(Node::Heading {
-                level: level.into(),
-                text: Text::default(),
-            }),
-            Tag::BlockQuote(kind) => self.push_node(Node::BlockQuote {
-                kind: kind.map(|kind| kind.into()),
-                nodes: vec![],
-            }),
-            Tag::CodeBlock(_) => self.push_node(Node::CodeBlock {
-                lang: None,
-                text: Text::default(),
-            }),
-            Tag::Item => self.push_node(Node::Item {
-                kind: None,
-                text: Text::default(),
-            }),
+            Tag::Paragraph => self.push_node(Node::new(
+                MarkdownNode::Paragraph {
+                    text: Text::default(),
+                },
+                range,
+            )),
+            Tag::Heading { level, .. } => self.push_node(Node::new(
+                MarkdownNode::Heading {
+                    level: level.into(),
+                    text: Text::default(),
+                },
+                range,
+            )),
+            Tag::BlockQuote(kind) => self.push_node(Node::new(
+                MarkdownNode::BlockQuote {
+                    kind: kind.map(|kind| kind.into()),
+                    nodes: vec![],
+                },
+                range,
+            )),
+            Tag::CodeBlock(_) => self.push_node(Node::new(
+                MarkdownNode::CodeBlock {
+                    lang: None,
+                    text: Text::default(),
+                },
+                range,
+            )),
+            Tag::Item => self.push_node(Node::new(
+                MarkdownNode::Item {
+                    kind: None,
+                    text: Text::default(),
+                },
+                range,
+            )),
             // For now everything below this comment are defined as paragraph nodes
             Tag::HtmlBlock
             | Tag::List(_)
@@ -450,25 +542,34 @@ impl<'a> Parser<'a> {
     }
 
     /// Processes a single [`Event`] from the underlying [`pulldown_cmark::Parser`] iterator.
-    fn handle_event(&mut self, event: Event<'a>) {
+    fn handle_event(&mut self, event: Event<'a>, range: Range<usize>) {
         match event {
-            Event::Start(tag) => self.tag(tag),
+            Event::Start(tag) => self.tag(tag, range),
             Event::End(tag_end) => self.tag_end(tag_end),
             Event::Text(text) => self.push_text_node(TextNode::new(text.to_string(), None)),
             Event::Code(text) => {
                 self.push_text_node(TextNode::new(text.to_string(), Some(Style::Code)))
             }
             Event::TaskListMarker(checked) => {
+                // The range for these markdown items only applies to the `[ ]` portion.
+                // TODO: Add implementation for ListBlock, which will retain the complete source
+                // range.
                 if checked {
-                    self.set_node(&Node::Item {
-                        kind: Some(ItemKind::HardChecked),
-                        text: Text::default(),
-                    });
+                    self.set_node(&Node::new(
+                        MarkdownNode::Item {
+                            kind: Some(ItemKind::HardChecked),
+                            text: Text::default(),
+                        },
+                        range,
+                    ));
                 } else {
-                    self.set_node(&Node::Item {
-                        kind: Some(ItemKind::Unchecked),
-                        text: Text::default(),
-                    });
+                    self.set_node(&Node::new(
+                        MarkdownNode::Item {
+                            kind: Some(ItemKind::Unchecked),
+                            text: Text::default(),
+                        },
+                        range,
+                    ));
                 }
             }
             Event::InlineMath(_)
@@ -490,16 +591,23 @@ impl<'a> Parser<'a> {
     /// # Examples
     ///
     /// ```
-    /// # use basalt_core::markdown::{Parser, Node, Text};
+    /// # use basalt_core::markdown::{Parser, Node, MarkdownNode, Range, Text};
     /// let parser = Parser::new("Hello world");
     ///
     /// let nodes = parser.parse();
     ///
-    /// assert_eq!(nodes, vec![Node::Paragraph { text: Text::from("Hello world") }]);
+    /// assert_eq!(nodes, vec![
+    ///   Node {
+    ///     markdown_node: MarkdownNode::Paragraph {
+    ///       text: Text::from("Hello world"),
+    ///     },
+    ///     source_range: Range { start: 0, end: 11 },
+    ///   },
+    /// ]);
     /// ```
     pub fn parse(mut self) -> Vec<Node> {
-        while let Some(event) = self.next() {
-            self.handle_event(event);
+        while let Some((event, range)) = self.next() {
+            self.handle_event(event, range);
         }
 
         if let Some(node) = self.current_node.take() {
@@ -514,64 +622,76 @@ impl<'a> Parser<'a> {
 mod tests {
     use indoc::indoc;
 
-    fn p(str: &str) -> Node {
-        Node::Paragraph { text: str.into() }
+    fn p(str: &str, range: Range<usize>) -> Node {
+        Node::new(MarkdownNode::Paragraph { text: str.into() }, range)
     }
 
-    fn blockquote(nodes: Vec<Node>) -> Node {
-        Node::BlockQuote { kind: None, nodes }
+    fn blockquote(nodes: Vec<Node>, range: Range<usize>) -> Node {
+        Node::new(MarkdownNode::BlockQuote { kind: None, nodes }, range)
     }
 
-    fn item(str: &str) -> Node {
-        Node::Item {
-            kind: None,
-            text: str.into(),
-        }
+    fn item(str: &str, range: Range<usize>) -> Node {
+        Node::new(
+            MarkdownNode::Item {
+                kind: None,
+                text: str.into(),
+            },
+            range,
+        )
     }
 
-    fn task(str: &str) -> Node {
-        Node::Item {
-            kind: Some(ItemKind::Unchecked),
-            text: str.into(),
-        }
+    fn task(str: &str, range: Range<usize>) -> Node {
+        Node::new(
+            MarkdownNode::Item {
+                kind: Some(ItemKind::Unchecked),
+                text: str.into(),
+            },
+            range,
+        )
     }
 
-    fn completed_task(str: &str) -> Node {
-        Node::Item {
-            kind: Some(ItemKind::HardChecked),
-            text: str.into(),
-        }
+    fn completed_task(str: &str, range: Range<usize>) -> Node {
+        Node::new(
+            MarkdownNode::Item {
+                kind: Some(ItemKind::HardChecked),
+                text: str.into(),
+            },
+            range,
+        )
     }
 
-    fn heading(level: HeadingLevel, str: &str) -> Node {
-        Node::Heading {
-            level,
-            text: str.into(),
-        }
+    fn heading(level: HeadingLevel, str: &str, range: Range<usize>) -> Node {
+        Node::new(
+            MarkdownNode::Heading {
+                level,
+                text: str.into(),
+            },
+            range,
+        )
     }
 
-    fn h1(str: &str) -> Node {
-        heading(HeadingLevel::H1, str)
+    fn h1(str: &str, range: Range<usize>) -> Node {
+        heading(HeadingLevel::H1, str, range)
     }
 
-    fn h2(str: &str) -> Node {
-        heading(HeadingLevel::H2, str)
+    fn h2(str: &str, range: Range<usize>) -> Node {
+        heading(HeadingLevel::H2, str, range)
     }
 
-    fn h3(str: &str) -> Node {
-        heading(HeadingLevel::H3, str)
+    fn h3(str: &str, range: Range<usize>) -> Node {
+        heading(HeadingLevel::H3, str, range)
     }
 
-    fn h4(str: &str) -> Node {
-        heading(HeadingLevel::H4, str)
+    fn h4(str: &str, range: Range<usize>) -> Node {
+        heading(HeadingLevel::H4, str, range)
     }
 
-    fn h5(str: &str) -> Node {
-        heading(HeadingLevel::H5, str)
+    fn h5(str: &str, range: Range<usize>) -> Node {
+        heading(HeadingLevel::H5, str, range)
     }
 
-    fn h6(str: &str) -> Node {
-        heading(HeadingLevel::H6, str)
+    fn h6(str: &str, range: Range<usize>) -> Node {
+        heading(HeadingLevel::H6, str, range)
     }
 
     use super::*;
@@ -593,12 +713,12 @@ mod tests {
                 ###### Heading 6
                 "#},
                 vec![
-                    h1("Heading 1"),
-                    h2("Heading 2"),
-                    h3("Heading 3"),
-                    h4("Heading 4"),
-                    h5("Heading 5"),
-                    h6("Heading 6"),
+                    h1("Heading 1", 0..12),
+                    h2("Heading 2", 13..26),
+                    h3("Heading 3", 27..41),
+                    h4("Heading 4", 42..57),
+                    h5("Heading 5", 58..74),
+                    h6("Heading 6", 75..92),
                 ],
             ),
             // TODO: Implement correct test case when `- [?] ` task item syntax is supported
@@ -613,10 +733,10 @@ mod tests {
                 - [?] Completed task
                 "#},
                 vec![
-                    h2("Tasks"),
-                    task("Task"),
-                    completed_task("Completed task"),
-                    p("[?] Completed task"),
+                    h2("Tasks", 0..9),
+                    task("Task", 12..15),
+                    completed_task("Completed task", 24..27),
+                    p("[?] Completed task", 46..65),
                 ],
             ),
             (
@@ -629,21 +749,21 @@ mod tests {
                 >- Doug Engelbart, 1961
                 "#},
                 vec![
-                    h2("Quotes"),
-                    Node::Paragraph {
+                    h2("Quotes", 0..10),
+                    Node::new(MarkdownNode::Paragraph {
                         text: vec![
                             TextNode::new("You ".into(), None),
-                            TextNode::new("can".into(), None),
+                            TextNode::new("can".into(),None),
                             TextNode::new(" quote text by adding a ".into(), None),
                             TextNode::new(">".into(), Some(Style::Code)),
                             TextNode::new(" symbols before the text.".into(), None),
                         ]
                         .into(),
-                    },
+                    }, 11..73),
                     blockquote(vec![
-                        p("Human beings face ever more complex and urgent problems, and their effectiveness in dealing with these problems is a matter that is critical to the stability and continued progress of society."),
-                        item("Doug Engelbart, 1961")
-                    ]),
+                        p("Human beings face ever more complex and urgent problems, and their effectiveness in dealing with these problems is a matter that is critical to the stability and continued progress of society.", 76..269),
+                        item("Doug Engelbart, 1961", 272..295)
+                    ], 74..295),
                 ],
             ),
         ];
