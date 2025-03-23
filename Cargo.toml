@@ -3,6 +3,4 @@ members = ["basalt-core", "basalt-widgets"]
 resolver = "2"
 
 [workspace.dependencies]
-# TODO: Enable workspace dependency when basalt-widgets supports the breaking changes
-# basalt-core = { path = "basalt-core", version = "0.2.2" }
-basalt-core = { version = "0.2.2" }
+basalt-core = { path = "basalt-core", version = "0.3.0" }
