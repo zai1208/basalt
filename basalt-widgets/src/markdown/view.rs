@@ -49,7 +49,7 @@ use ratatui::{
     },
 };
 
-use basalt_core::markdown::{self, HeadingLevel, ItemKind, Node};
+use basalt_core::markdown::{self, HeadingLevel, ItemKind};
 
 use super::state::MarkdownViewState;
 
@@ -168,30 +168,30 @@ impl MarkdownView {
     }
 
     fn render_markdown<'a>(node: markdown::Node, prefix: Span<'a>) -> Vec<Line<'a>> {
-        match node {
-            Node::Paragraph { text } => {
+        match node.markdown_node {
+            markdown::MarkdownNode::Paragraph { text } => {
                 let mut spans = MarkdownView::text_to_spans(text);
                 spans.insert(0, prefix.clone());
                 vec![spans.into(), Line::from(prefix)]
             }
-            Node::Heading { level, text } => [
+            markdown::MarkdownNode::Heading { level, text } => [
                 MarkdownView::heading(level, MarkdownView::text_to_spans(text)),
                 Line::default(),
             ]
             .to_vec(),
-            Node::Item { kind, text } => [
+            markdown::MarkdownNode::Item { kind, text } => [
                 MarkdownView::item(kind, MarkdownView::text_to_spans(text), prefix),
                 Line::default(),
             ]
             .to_vec(),
             // TODO: Add lang support and syntax highlighting
-            Node::CodeBlock { text, .. } => {
+            markdown::MarkdownNode::CodeBlock { text, .. } => {
                 let mut lines = MarkdownView::code_block(text);
                 lines.insert(0, Line::default());
                 lines
             }
             // TODO: Support callout block quote types
-            Node::BlockQuote { nodes, .. } => {
+            markdown::MarkdownNode::BlockQuote { nodes, .. } => {
                 let mut lines = nodes
                     .into_iter()
                     .flat_map(|child| {

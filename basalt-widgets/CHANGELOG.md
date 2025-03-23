@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+#### Markdown
+
+- [Fix breaking change and use MarkdownNode instead of Node](https://github.com/erikjuhani/basalt/commit/d86f7d788364475c4679c33c6cac6997858846e7)
+
 ## 0.1.0 (2025-02-28)
 
 ### Added
