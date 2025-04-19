@@ -54,10 +54,13 @@ impl ObsidianConfig {
     ///     ("Work", Vault::default()),
     /// ]);
     ///
-    /// _ = config.vaults();
+    /// let vaults = config.vaults();
+    ///
+    /// assert_eq!(vaults.len(), 2);
+    /// assert_eq!(vaults.get(0), Some(&Vault::default()).as_ref());
     /// ```
-    pub fn vaults(&self) -> impl Iterator<Item = (String, Vault)> {
-        self.vaults.clone().into_iter()
+    pub fn vaults(&self) -> Vec<&Vault> {
+        self.vaults.values().collect()
     }
 
     /// Finds a vault by name, returning a reference if it exists.
@@ -175,7 +178,8 @@ impl<'de> Deserialize<'de> for ObsidianConfig {
             }
         }
 
-        Ok(Json::from(Deserialize::deserialize(deserializer)?).into())
+        let deserialized: Json = Deserialize::deserialize(deserializer)?;
+        Ok(deserialized.into())
     }
 }
 
