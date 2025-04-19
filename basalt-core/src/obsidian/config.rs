@@ -2,7 +2,7 @@ use dirs::config_local_dir;
 
 use serde::{Deserialize, Deserializer};
 use std::result;
-use std::{collections::HashMap, fs, path::PathBuf};
+use std::{collections::BTreeMap, fs, path::PathBuf};
 
 use crate::obsidian::{Error, Result, Vault};
 
@@ -10,7 +10,7 @@ use crate::obsidian::{Error, Result, Vault};
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct ObsidianConfig {
     /// A mapping of vault (folder) names to [`Vault`] definitions.
-    vaults: HashMap<String, Vault>,
+    vaults: BTreeMap<String, Vault>,
 }
 
 impl ObsidianConfig {
@@ -122,7 +122,7 @@ impl<const N: usize> From<[(&str, Vault); N]> for ObsidianConfig {
     /// ```
     fn from(arr: [(&str, Vault); N]) -> Self {
         Self {
-            vaults: HashMap::from(arr.map(|(name, vault)| (name.to_owned(), vault))),
+            vaults: BTreeMap::from(arr.map(|(name, vault)| (name.to_owned(), vault))),
         }
     }
 }
@@ -147,7 +147,7 @@ impl<const N: usize> From<[(String, Vault); N]> for ObsidianConfig {
     /// ```
     fn from(arr: [(String, Vault); N]) -> Self {
         Self {
-            vaults: HashMap::from(arr),
+            vaults: BTreeMap::from(arr),
         }
     }
 }
@@ -159,7 +159,7 @@ impl<'de> Deserialize<'de> for ObsidianConfig {
     {
         #[derive(Deserialize)]
         struct Json {
-            vaults: HashMap<String, Vault>,
+            vaults: BTreeMap<String, Vault>,
         }
 
         impl From<Json> for ObsidianConfig {
