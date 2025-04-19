@@ -1,6 +1,7 @@
 use dirs::config_local_dir;
 
 use serde::{Deserialize, Deserializer};
+use std::path::Path;
 use std::result;
 use std::{collections::BTreeMap, fs, path::PathBuf};
 
@@ -19,12 +20,12 @@ impl ObsidianConfig {
     /// Returns an [`Error`] if the filepath doesn't exist or JSON parsing failed.
     pub fn load() -> Result<Self> {
         obsidian_config_dir()
-            .map(ObsidianConfig::load_from)
-            .ok_or_else(|| Error::PathNotFound("Obsidian config directory".to_string()))?
+            .map(|path_buf| ObsidianConfig::load_from(&path_buf))
+            .ok_or(Error::PathNotFound("Obsidian config directory".to_string()))?
     }
 
     /// Attempts to load `obsidian.json` file as an [`ObsidianConfig`] from the given directory
-    /// [`PathBuf`].
+    /// [`Path`].
     ///
     /// Returns an [`Error`] if the filepath doesn't exist or JSON parsing failed.
     ///
@@ -32,12 +33,12 @@ impl ObsidianConfig {
     ///
     /// ```
     /// use basalt_core::obsidian::ObsidianConfig;
-    /// use std::path::PathBuf;
+    /// use std::path::Path;
     ///
-    /// _ = ObsidianConfig::load_from(PathBuf::from("./dir-with-config-file"));
+    /// _ = ObsidianConfig::load_from(Path::new("./dir-with-config-file"));
     /// ```
-    pub fn load_from(dir: PathBuf) -> Result<Self> {
-        let contents = fs::read_to_string(dir.join("obsidian.json"))?;
+    pub fn load_from(config_path: &Path) -> Result<Self> {
+        let contents = fs::read_to_string(config_path.join("obsidian.json"))?;
         Ok(serde_json::from_str(&contents)?)
     }
 
