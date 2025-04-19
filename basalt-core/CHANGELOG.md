@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Changed
+
+- [Change `TryInto` to `TryFrom`](https://github.com/erikjuhani/basalt/commit/d0cc15c14d21507b148499808e92da78d958c771)
+
+### Breaking
+
+- [Move `Default` impl of `Note` under `note.rs`](https://github.com/erikjuhani/basalt/commit/3916185bf946dc6ff8af3efee02526ae3175fff5)
+- [Return `Vec<&Vault>` from `vaults()` instead of `Iterator`](https://github.com/erikjuhani/basalt/commit/f7587c98e119bc0bb43b55425baeb2797d9682ee)
+- [Use `Path` instead `PathBuf` when loading config from path](https://github.com/erikjuhani/basalt/commit/256fb33d8b0cb893496a1eea8a08ce025f33fb48)
+- [Use `BTreeMap` instead of `HashMap` to keep same order of vaults](https://github.com/erikjuhani/basalt/commit/7ed11881cd83cc489f98bf0d2e679a6c7fa12d9d)
 - [Add `source_range` field to Nodes](https://github.com/erikjuhani/basalt/commit/1c199259f3831768e1823a34c9165c489f71eed0)
 
 ## 0.2.2 (2025-02-27)
