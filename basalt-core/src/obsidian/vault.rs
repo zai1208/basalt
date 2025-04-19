@@ -3,7 +3,6 @@ use std::{
     fs::{self, read_dir},
     path::{Path, PathBuf},
     result,
-    time::SystemTime,
 };
 
 use serde::{Deserialize, Deserializer};
@@ -89,10 +88,10 @@ impl<'de> Deserialize<'de> for Vault {
             ts: u64,
         }
 
-        impl TryInto<Vault> for Json {
+        impl TryFrom<Json> for Vault {
             type Error = String;
-            fn try_into(self) -> result::Result<Vault, Self::Error> {
-                let path = Path::new(&self.path);
+            fn try_from(value: Json) -> Result<Self, Self::Error> {
+                let path = Path::new(&value.path);
                 let name = path
                     .file_name()
                     .ok_or_else(|| String::from("unable to retrieve vault name"))?
@@ -100,26 +99,15 @@ impl<'de> Deserialize<'de> for Vault {
                     .to_string();
                 Ok(Vault {
                     name,
-                    path: self.path,
-                    open: self.open.unwrap_or_default(),
-                    ts: self.ts,
+                    path: value.path,
+                    open: value.open.unwrap_or_default(),
+                    ts: value.ts,
                 })
             }
         }
 
-        Json::from(Deserialize::deserialize(deserializer)?)
-            .try_into()
-            .map_err(serde::de::Error::custom)
-    }
-}
-
-impl Default for Note {
-    fn default() -> Self {
-        Self {
-            name: String::default(),
-            path: PathBuf::default(),
-            created: SystemTime::now(),
-        }
+        let deserialized: Json = Deserialize::deserialize(deserializer)?;
+        deserialized.try_into().map_err(serde::de::Error::custom)
     }
 }
 

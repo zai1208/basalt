@@ -17,6 +17,16 @@ pub struct Note {
     pub created: SystemTime,
 }
 
+impl Default for Note {
+    fn default() -> Self {
+        Self {
+            name: String::default(),
+            path: PathBuf::default(),
+            created: SystemTime::UNIX_EPOCH,
+        }
+    }
+}
+
 impl Note {
     /// Reads the note's contents from disk to a `String`.
     ///

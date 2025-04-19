@@ -33,18 +33,12 @@ pub use vault::Vault;
 /// # Examples
 ///
 /// ```
-/// use basalt_core::obsidian::{ObsidianConfig, Result};
+/// use std::path::Path;
+/// use basalt_core::obsidian::{ObsidianConfig, Error};
 ///
-/// fn get_vault_names() -> Result<Vec<String>> {
-///     let config = ObsidianConfig::load()?;
-///     Ok(config.vaults().map(|(name,_)| name).collect())
-/// }
 ///
-/// fn main() -> Result<()> {
-///     let vaults = get_vault_names()?;
-///     println!("Found vaults: {:?}", vaults);
-///     Ok(())
-/// }
+/// let config_result = ObsidianConfig::load_from(Path::new("./nonexistent"));
+/// assert_eq!(config_result.is_err(), true);
 /// ```
 pub type Result<T> = result::Result<T, Error>;
 

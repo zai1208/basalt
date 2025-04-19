@@ -1,8 +1,9 @@
 use dirs::config_local_dir;
 
 use serde::{Deserialize, Deserializer};
+use std::path::Path;
 use std::result;
-use std::{collections::HashMap, fs, path::PathBuf};
+use std::{collections::BTreeMap, fs, path::PathBuf};
 
 use crate::obsidian::{Error, Result, Vault};
 
@@ -10,7 +11,7 @@ use crate::obsidian::{Error, Result, Vault};
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct ObsidianConfig {
     /// A mapping of vault (folder) names to [`Vault`] definitions.
-    vaults: HashMap<String, Vault>,
+    vaults: BTreeMap<String, Vault>,
 }
 
 impl ObsidianConfig {
@@ -19,12 +20,12 @@ impl ObsidianConfig {
     /// Returns an [`Error`] if the filepath doesn't exist or JSON parsing failed.
     pub fn load() -> Result<Self> {
         obsidian_config_dir()
-            .map(ObsidianConfig::load_from)
-            .ok_or_else(|| Error::PathNotFound("Obsidian config directory".to_string()))?
+            .map(|path_buf| ObsidianConfig::load_from(&path_buf))
+            .ok_or(Error::PathNotFound("Obsidian config directory".to_string()))?
     }
 
     /// Attempts to load `obsidian.json` file as an [`ObsidianConfig`] from the given directory
-    /// [`PathBuf`].
+    /// [`Path`].
     ///
     /// Returns an [`Error`] if the filepath doesn't exist or JSON parsing failed.
     ///
@@ -32,12 +33,12 @@ impl ObsidianConfig {
     ///
     /// ```
     /// use basalt_core::obsidian::ObsidianConfig;
-    /// use std::path::PathBuf;
+    /// use std::path::Path;
     ///
-    /// _ = ObsidianConfig::load_from(PathBuf::from("./dir-with-config-file"));
+    /// _ = ObsidianConfig::load_from(Path::new("./dir-with-config-file"));
     /// ```
-    pub fn load_from(dir: PathBuf) -> Result<Self> {
-        let contents = fs::read_to_string(dir.join("obsidian.json"))?;
+    pub fn load_from(config_path: &Path) -> Result<Self> {
+        let contents = fs::read_to_string(config_path.join("obsidian.json"))?;
         Ok(serde_json::from_str(&contents)?)
     }
 
@@ -53,10 +54,13 @@ impl ObsidianConfig {
     ///     ("Work", Vault::default()),
     /// ]);
     ///
-    /// _ = config.vaults();
+    /// let vaults = config.vaults();
+    ///
+    /// assert_eq!(vaults.len(), 2);
+    /// assert_eq!(vaults.get(0), Some(&Vault::default()).as_ref());
     /// ```
-    pub fn vaults(&self) -> impl Iterator<Item = (String, Vault)> {
-        self.vaults.clone().into_iter()
+    pub fn vaults(&self) -> Vec<&Vault> {
+        self.vaults.values().collect()
     }
 
     /// Finds a vault by name, returning a reference if it exists.
@@ -122,7 +126,7 @@ impl<const N: usize> From<[(&str, Vault); N]> for ObsidianConfig {
     /// ```
     fn from(arr: [(&str, Vault); N]) -> Self {
         Self {
-            vaults: HashMap::from(arr.map(|(name, vault)| (name.to_owned(), vault))),
+            vaults: BTreeMap::from(arr.map(|(name, vault)| (name.to_owned(), vault))),
         }
     }
 }
@@ -147,7 +151,7 @@ impl<const N: usize> From<[(String, Vault); N]> for ObsidianConfig {
     /// ```
     fn from(arr: [(String, Vault); N]) -> Self {
         Self {
-            vaults: HashMap::from(arr),
+            vaults: BTreeMap::from(arr),
         }
     }
 }
@@ -159,7 +163,7 @@ impl<'de> Deserialize<'de> for ObsidianConfig {
     {
         #[derive(Deserialize)]
         struct Json {
-            vaults: HashMap<String, Vault>,
+            vaults: BTreeMap<String, Vault>,
         }
 
         impl From<Json> for ObsidianConfig {
@@ -174,7 +178,8 @@ impl<'de> Deserialize<'de> for ObsidianConfig {
             }
         }
 
-        Ok(Json::from(Deserialize::deserialize(deserializer)?).into())
+        let deserialized: Json = Deserialize::deserialize(deserializer)?;
+        Ok(deserialized.into())
     }
 }
 
