@@ -88,10 +88,10 @@ impl<'de> Deserialize<'de> for Vault {
             ts: u64,
         }
 
-        impl TryInto<Vault> for Json {
+        impl TryFrom<Json> for Vault {
             type Error = String;
-            fn try_into(self) -> result::Result<Vault, Self::Error> {
-                let path = Path::new(&self.path);
+            fn try_from(value: Json) -> Result<Self, Self::Error> {
+                let path = Path::new(&value.path);
                 let name = path
                     .file_name()
                     .ok_or_else(|| String::from("unable to retrieve vault name"))?
