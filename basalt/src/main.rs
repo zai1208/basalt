@@ -1,5 +1,6 @@
 use std::io;
 
+pub mod help_modal;
 pub mod sidepanel;
 pub mod statusbar;
 pub mod text_counts;

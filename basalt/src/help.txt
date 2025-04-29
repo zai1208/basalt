@@ -1,0 +1,124 @@
+                                     ▒▓█▒░
+                                    ▒█▓▓░▒░
+                                   ██▓█▒▒▒▒
+                                  ▒▓██▓░▒▒▒░
+                                  ▓▒▒█▒▒░░░░
+                                   ░▒▒░░░▒░
+                                    ░▒▒▒▒░
+
+                                   ⋅𝕭𝖆𝖘𝖆𝖑𝖙⋅
+
+                      TUI Application to manage Obsidian
+                 vaults and notes directly from the terminal.
+
+───────────────────────────────────────────────────────────────────────────────
+            %version-notice
+
+DISCLAIMER
+
+  Basalt is in its early stages, with a very limited set of features, and is
+  therefore susceptible to changes. Currently, the major drawback of Basalt is
+  the inability to modify any notes. Another limitation is the missing or
+  incomplete rendering of certain markdown styles. However, these features will
+  be prioritized in the next version.
+
+  Quitting the application may feel a bit abrupt, as the application exits
+  immediately after pressing ‹q›. I have some plans to handle this differently
+  in the future. For example, through a series of button presses or by using
+  command inputs similar to Vims ‹:quit› or ‹:q›.
+
+VAULT SELECTION
+
+  On startup screen you can select the Vault you want to view. Any vaults
+  considered open are shown with a ◆ symbol marker.
+
+      ‹q›         Quit the application
+      ‹?›         Show this help
+      ‹k›         Move selection up
+      ‹j›         Move selection down
+      ‹↩ Enter›   Select and open the highlighted vault
+
+  The vault selection can be brought up as a modal by hitting ‹Space› after
+  startup screen.
+
+MODES
+
+  The current mode is displayed in the bottom-left corner of the UI.
+
+  The distinction between the SELECT and NORMAL modes is that in SELECT mode,
+  you can browse and preview the notes in the vault, and in NORMAL mode, you
+  can navigate the content of a single selected note. Scrolling the notes work
+  in both modes.
+
+  SELECT
+          Navigate the vault's notes.
+
+          In SELECT mode, the vault contents can be selected by pressing Enter
+          or Return key. The list can be traversed up or down using ‹j› for
+          down and ‹k› for up. To change to NORMAL mode and hide the side
+          panel, press ‹t›.
+
+            ‹q›         Quit the application
+            ‹?›         Show this help
+            ‹t›         Toggle side panel visibility and select mode
+            ‹k›         Move selection up
+            ‹j›         Move selection down
+            ‹↑ / ↓›     Scroll selected note content up / down
+            ‹↩ Enter›   Select the highlighted note
+
+            ‹Space›     Toggle vault selector modal
+            ‹Ctrl-u›    Scroll selected note up half a page
+            ‹Ctrl-d›    Scroll selected note down half a page
+
+  NORMAL
+          Navigate the note.
+
+          In NORMAL mode, the contents of the note can be viewed and navigated.
+          Use mouse or arrow keys ‹↑ / ↓› to scroll up / down the note. To
+          toggle the SELECT mode and show side panel, press ‹t›.
+
+            ‹q›         Quit the application
+            ‹?›         Show this help
+            ‹t›         Toggle side panel visibility and select mode
+            ‹k›         Move selection up
+            ‹j›         Move selection down
+            ‹↑ / ↓›     Scroll selected note content up / down
+            ‹↩ Enter›   Select the highlighted note
+
+            ‹Space›     Toggle vault selector modal
+            ‹Ctrl-u›    Scroll selected note up half a page
+            ‹Ctrl-d›    Scroll selected note down half a page
+
+───────────────────────────────────────────────────────────────────────────────
+
+KEY BINDINGS
+
+  ‹q›         Quit the application
+  ‹?›         Show this help
+  ‹t›         Toggle side panel visibility and select mode
+  ‹k›         Move selection up
+  ‹j›         Move selection down
+  ‹↑ / ↓›     Scroll selected up / down
+  ‹↩ Enter›   Select the highlighted note
+
+  ‹Space›     Toggle vault selector modal
+  ‹Ctrl-u›    Scroll up half a page
+  ‹Ctrl-d›    Scroll down half a page
+
+───────────────────────────────────────────────────────────────────────────────
+
+FEATURES
+
+  • Navigate and open notes from the active Obsidian Vault.
+  • View markdown notes in a readable, custom styled format.
+
+───────────────────────────────────────────────────────────────────────────────
+
+KNOWN LIMITATIONS
+
+  • Images are not rendered.
+  • External links are not clickable.
+  • Nested folders are not supported.
+  • Notes cannot be modified.
+  • Key bindings cannot be changed with configuration.
+
