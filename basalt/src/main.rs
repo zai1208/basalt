@@ -2,6 +2,7 @@ use std::io;
 
 pub mod help_modal;
 pub mod sidepanel;
+pub mod start;
 pub mod statusbar;
 pub mod text_counts;
 pub mod vault_selector;
