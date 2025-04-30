@@ -12,6 +12,12 @@ TUI Application to manage Obsidian vaults and notes directly from the terminal â
 
 For now unfortunately, you have to compile this binary yourself, if you want to run basalt. The next thing I'll be doing is adding a GitHub workflow to produce cross-platform binaries.
 
+Install basalt using cargo:
+
+```sh
+cargo install basalt-tui
+```
+
 ## Background
 
 This is something that has been brewing in my head for quite some time. There has been different incarnations over the years, however, nothing as substantial as this.
