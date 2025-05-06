@@ -60,7 +60,9 @@ jobs:
       - name: Prepare artifact
         shell: bash
         run: |
-          version="${{ github.ref_name }}"
+          ref_name="${{ github.ref_name }}"
+          version="${ref_name##*/}"
+
           target="${{ matrix.target }}"
           bin_path="target/${target}/release"
           archive="basalt-${version}-${target}"
@@ -95,7 +97,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          version="${{ github.ref_name }}"
+          ref_name="${{ github.ref_name }}"
+          version="${ref_name##*/}"
+
           artifact="${{ env.ARCHIVE }}"
           artifact_sum="${{ env.ARTIFACT_SUM }}"
           gh release upload "${version}" "${artifact}" "${artifact_sum}"
