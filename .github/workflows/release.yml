@@ -96,11 +96,11 @@ jobs:
       - name: Upload artifact and checksum to existing GitHub release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
         run: |
           ref_name="${{ github.ref_name }}"
-          version="${ref_name##*/}"
 
           artifact="${{ env.ARCHIVE }}"
           artifact_sum="${{ env.ARTIFACT_SUM }}"
-          gh release upload "${version}" "${artifact}" "${artifact_sum}"
+          gh release upload "${ref_name}" "${artifact}" "${artifact_sum}"
 
