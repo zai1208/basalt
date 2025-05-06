@@ -62,8 +62,9 @@ For now these are not configurable, but this will change when the configuration 
 - [x] Add vault selector modal
 - [ ] GitHub Workflows !
     - [x] Run tests and build
-    - [ ] Run create release artifacts (cross-platform binaries)
+    - [x] Run create release artifacts (cross-platform binaries)
     - [ ] Run vhs when basalt dir changes and commit it to the current PR
+- [ ] Add mdbook and gh pages
 - [ ] Async file loading (tokio)
 - [ ] Persistent scroll state in help modal
 - [ ] Fuzzy search in panes (note, sidepanel, modals)
