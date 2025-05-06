@@ -60,14 +60,16 @@ jobs:
       - name: Prepare artifact
         shell: bash
         run: |
-          version="${{ github.ref_name }}"
+          ref_name="${{ github.ref_name }}"
+          version="${ref_name##*/}"
+
           target="${{ matrix.target }}"
           bin_path="target/${target}/release"
           archive="basalt-${version}-${target}"
 
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
             archive="${archive}.zip"
-            7z -a "${archive}" "${bin_path}/basalt.exe"
+            7z a "${archive}" "${bin_path}/basalt.exe"
           else
             archive="${archive}.tar.gz"
             tar -czf "${archive}" "${bin_path}/basalt"
@@ -95,7 +97,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          version="${{ github.ref_name }}"
+          ref_name="${{ github.ref_name }}"
+          version="${ref_name##*/}"
+
           artifact="${{ env.ARCHIVE }}"
           artifact_sum="${{ env.ARTIFACT_SUM }}"
           gh release upload "${version}" "${artifact}" "${artifact_sum}"
