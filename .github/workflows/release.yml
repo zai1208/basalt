@@ -58,6 +58,7 @@ jobs:
         run: cargo build --verbose --release --target ${{ matrix.target }}
 
       - name: Prepare artifact
+        shell: bash
         run: |
           version="${{ github.ref_name }}"
           target="${{ matrix.target }}"
