@@ -69,7 +69,7 @@ jobs:
 
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
             archive="${archive}.zip"
-            7z -a "${archive}" "${bin_path}/basalt.exe"
+            7z a "${archive}" "${bin_path}/basalt.exe"
           else
             archive="${archive}.tar.gz"
             tar -czf "${archive}" "${bin_path}/basalt"
