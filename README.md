@@ -63,6 +63,7 @@ For now these are not configurable, but this will change when the configuration 
 - [ ] GitHub Workflows !
     - [x] Run tests and build
     - [x] Run create release artifacts (cross-platform binaries)
+    - [ ] Do not run test when pushing a tag
     - [ ] Run vhs when basalt dir changes and commit it to the current PR
 - [ ] Add mdbook and gh pages
 - [ ] Async file loading (tokio)
