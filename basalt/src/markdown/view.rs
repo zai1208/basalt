@@ -44,7 +44,7 @@ use ratatui::{
     style::{Color, Modifier, Stylize},
     text::{Line, Span},
     widgets::{
-        self, Block, BorderType, Paragraph, ScrollbarOrientation, StatefulWidget,
+        self, Block, BorderType, Padding, Paragraph, ScrollbarOrientation, StatefulWidget,
         StatefulWidgetRef, Widget,
     },
 };
@@ -155,25 +155,44 @@ impl MarkdownView {
             .collect()
     }
 
-    fn code_block<'a>(text: parser::Text) -> Vec<Line<'a>> {
+    fn code_block<'a>(text: parser::Text, width: usize) -> Vec<Line<'a>> {
         text.into_iter()
             .flat_map(|text| {
                 text.content
                     .clone()
                     .split("\n")
-                    .map(String::from)
+                    .map(|line| {
+                        format!(
+                            " {} {}",
+                            line,
+                            (line.len()..width).map(|_| " ").collect::<String>()
+                        )
+                    })
                     .collect::<Vec<String>>()
             })
-            .map(|text| Line::from(text).red().bg(Color::Rgb(10, 10, 10)))
+            .map(|text| Line::from(text).bold().bg(Color::Black))
             .collect()
     }
 
-    fn render_markdown<'a>(node: parser::Node, prefix: Span<'a>) -> Vec<Line<'a>> {
+    fn wrap_with_prefix(text: String, width: usize, prefix: Span) -> Vec<Line> {
+        let options =
+            textwrap::Options::new(width.saturating_sub(prefix.width())).break_words(false);
+
+        textwrap::wrap(&text, &options)
+            .into_iter()
+            .map(|wrapped_line| {
+                Line::from([prefix.clone(), Span::from(wrapped_line.to_string())].to_vec())
+            })
+            .collect()
+    }
+
+    fn render_markdown<'a>(node: parser::Node, area: Rect, prefix: Span<'a>) -> Vec<Line<'a>> {
         match node.markdown_node {
             parser::MarkdownNode::Paragraph { text } => {
-                let mut spans = MarkdownView::text_to_spans(text);
-                spans.insert(0, prefix.clone());
-                vec![spans.into(), Line::default()]
+                MarkdownView::wrap_with_prefix(text.into(), area.width.into(), prefix.clone())
+                    .into_iter()
+                    .chain([Line::from(prefix)])
+                    .collect::<Vec<_>>()
             }
             parser::MarkdownNode::Heading { level, text } => [
                 MarkdownView::heading(level, MarkdownView::text_to_spans(text)),
@@ -194,15 +213,18 @@ impl MarkdownView {
             .to_vec(),
             // TODO: Add lang support and syntax highlighting
             parser::MarkdownNode::CodeBlock { text, .. } => {
-                let lines = MarkdownView::code_block(text);
-                lines
+                [Line::from((0..area.width).map(|_| " ").collect::<String>()).bg(Color::Black)]
+                    .into_iter()
+                    .chain(MarkdownView::code_block(text, area.width.into()))
+                    .chain([Line::default()])
+                    .collect::<Vec<_>>()
             }
             parser::MarkdownNode::List { nodes, kind } => nodes
                 .into_iter()
                 .enumerate()
                 .flat_map(|(i, child)| {
                     let parser::MarkdownNode::Item { text } = child.markdown_node else {
-                        return MarkdownView::render_markdown(child, prefix.clone());
+                        return MarkdownView::render_markdown(child, area, prefix.clone());
                     };
 
                     let item = match kind {
@@ -227,7 +249,7 @@ impl MarkdownView {
             parser::MarkdownNode::BlockQuote { nodes, .. } => nodes
                 .into_iter()
                 .flat_map(|child| {
-                    MarkdownView::render_markdown(child, Span::from("┃ ").magenta())
+                    MarkdownView::render_markdown(child, area, Span::from("┃ ").magenta())
                         .into_iter()
                         .collect::<Vec<_>>()
                 })
@@ -242,15 +264,21 @@ impl StatefulWidgetRef for MarkdownView {
     type State = MarkdownViewState;
 
     fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        let block = Block::bordered()
+            .border_type(BorderType::Rounded)
+            .padding(Padding::horizontal(1));
+
         let nodes = parser::from_str(&state.text)
             .into_iter()
-            .flat_map(|node| MarkdownView::render_markdown(node, Span::default()))
+            .flat_map(|node| {
+                MarkdownView::render_markdown(node, block.inner(area), Span::default())
+            })
             .collect::<Vec<Line<'_>>>();
 
         let mut scroll_state = state.scrollbar.state.content_length(nodes.len());
 
         let root_node = Paragraph::new(nodes)
-            .block(Block::bordered().border_type(BorderType::Rounded))
+            .block(block)
             .scroll((state.scrollbar.position as u16, 0));
 
         Widget::render(root_node, area, buf);
