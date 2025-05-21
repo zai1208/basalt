@@ -1,10 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.4.3 (2025-05-21)
 
 ### Fixed
 
 - [Fix clippy error with matches! expression](https://github.com/erikjuhani/basalt/commit/725eac3c0b5103a6de34cd155611d22091a245ab)
+- [Use config_dir() to locate obsidian.json on Windows (#38)](https://github.com/erikjuhani/basalt/commit/839674c3e8fa1d8a9e6b7852bcc659dbd88e45dc)
 
 ## 0.4.2 (2025-05-01)
 
