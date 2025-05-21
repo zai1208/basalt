@@ -236,13 +236,16 @@ impl<'a> App<'a> {
         .run(state)
     }
 
-    fn run(&mut self, state: AppState<'a>) -> Result<()> {
-        self.draw(&state)?;
-        let event = &event::read()?;
-        match self.update(&state, self.handle_event(event)) {
-            state if state.is_running => self.run(state),
-            _ => Ok(()),
+    fn run(&mut self, mut state: AppState<'a>) -> Result<()> {
+        loop {
+            self.draw(&state)?;
+            if !state.is_running {
+                break;
+            }
+            let event = event::read()?;
+            state = self.update(&state, self.handle_event(&event));
         }
+        Ok(())
     }
 
     fn update_help_modal(
