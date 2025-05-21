@@ -1,9 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.3.7 (2025-05-22)
+
+### Added
 
 - [Add `stylized_text` module](https://github.com/erikjuhani/basalt/commit/47db925ef858831672be69fb11bcf272522e1b3a)
 - [Add `lib.rs` which allows basalt to be used as a library](https://github.com/erikjuhani/basalt/commit/ce094ed8aab1945aad36955bce83eeea09085177)
+
+### Fixed
+
+- [Use a regular loop instead of recursion for rendering](https://github.com/erikjuhani/basalt/commit/4d9e6c83f2342b12501c2f316dbab05ab68119ab)
 
 ## 0.3.6 (2025-05-21)
 
