@@ -18,6 +18,42 @@ pub struct SidePanelState<'a> {
     list_state: ListState,
 }
 
+/// Calculates the vertical offset of list items in rows.
+///
+/// When the selected item is near the end of the list and there aren't enough items
+/// remaining to keep the selection vertically centered, we shift the offset to show
+/// as many trailing items as possible instead of centering the selection.
+///
+/// This prevents empty lines from appearing at the bottom of the list when the
+/// selection moves toward the end.
+///
+/// Without this check, you'd see output like:
+/// ╭────────╮
+/// │ 3 item │
+/// │>4 item │
+/// │ 5 item │
+/// │        │
+/// ╰────────╯
+///
+/// With this check, the list scrolls up to fill the remaining space:
+/// ╭────────╮
+/// │ 2 item │
+/// │ 3 item │
+/// │>4 item │
+/// │ 5 item │
+/// ╰────────╯
+///
+/// The goal is to avoid showing unnecessary blank rows and to maximize visible items.
+fn calculate_offset(row: usize, items_count: usize, window_height: usize) -> usize {
+    let half = window_height / 2;
+
+    if row + half > items_count.saturating_sub(1) {
+        items_count.saturating_sub(window_height)
+    } else {
+        row.saturating_sub(half)
+    }
+}
+
 impl<'a> SidePanelState<'a> {
     pub fn new(title: &'a str, items: Vec<Note>) -> Self {
         SidePanelState {
@@ -47,47 +83,16 @@ impl<'a> SidePanelState<'a> {
         }
     }
 
-    fn calculate_offset(&self, window_height: usize) -> usize {
-        let half = window_height / 2;
-
-        let idx = self.list_state.selected().unwrap_or_default();
-
-        // When the selected item is near the end of the list and there aren't enough items
-        // remaining to keep the selection vertically centered, we shift the offset to show
-        // as many trailing items as possible instead of centering the selection.
-        //
-        // This prevents empty lines from appearing at the bottom of the list when the
-        // selection moves toward the end.
-        //
-        // Without this check, you'd see output like:
-        // ╭────────╮
-        // │ 3 item │
-        // │>4 item │
-        // │ 5 item │
-        // │        │
-        // ╰────────╯
-        //
-        // With this check, the list scrolls up to fill the remaining space:
-        // ╭────────╮
-        // │ 2 item │
-        // │ 3 item │
-        // │>4 item │
-        // │ 5 item │
-        // ╰────────╯
-        //
-        // The goal is to avoid showing unnecessary blank rows and to maximize visible items.
-        if idx + half > self.items.len() - 1 {
-            self.items.len().saturating_sub(window_height)
-        } else {
-            idx.saturating_sub(half)
-        }
-    }
-
     pub fn update_offset_mut(&mut self, window_height: usize) -> &Self {
-        let offset = self.calculate_offset(window_height);
+        if !self.items.is_empty() {
+            let idx = self.list_state.selected().unwrap_or_default();
+            let items_count = self.items.len();
 
-        let list_state = &mut self.list_state;
-        *list_state.offset_mut() = offset;
+            let offset = calculate_offset(idx, items_count, window_height);
+
+            let list_state = &mut self.list_state;
+            *list_state.offset_mut() = offset;
+        }
 
         self
     }
@@ -111,7 +116,7 @@ impl<'a> SidePanelState<'a> {
         let index = self
             .list_state
             .selected()
-            .map(|i| (i + 1).min(self.items.len() - 1));
+            .map(|i| (i + 1).min(self.items.len().saturating_sub(1)));
 
         self.list_state.select(index);
 
