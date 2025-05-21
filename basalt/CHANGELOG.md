@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.6 (2025-05-21)
+
+### Fixed
+
+- [Fix panic, when there are no notes inside a vault](https://github.com/erikjuhani/basalt/commit/4644f90a595f8000e983475b78e0d3605a5bc16e)
+
 ## 0.3.5
 
 ### Fixed
