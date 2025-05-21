@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.5
+
+### Fixed
+
+- [Use config_dir() to locate obsidian.json on Windows (#38)](https://github.com/erikjuhani/basalt/commit/839674c3e8fa1d8a9e6b7852bcc659dbd88e45dc)
+
 ## 0.3.4
 
 ### Added
