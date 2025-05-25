@@ -110,7 +110,7 @@ impl MarkdownView {
     ) -> Line<'a> {
         match kind {
             parser::TaskListItemKind::Unchecked => Line::from(
-                [prefix, "□ ".black()]
+                [prefix, "□ ".dark_gray()]
                     .into_iter()
                     .chain(content)
                     .collect::<Vec<_>>(),
@@ -121,7 +121,7 @@ impl MarkdownView {
                     .chain(content)
                     .collect::<Vec<_>>(),
             )
-            .black()
+            .dark_gray()
             .add_modifier(Modifier::CROSSED_OUT),
             parser::TaskListItemKind::LooselyChecked => Line::from(
                 [prefix, "■ ".magenta()]
@@ -135,13 +135,13 @@ impl MarkdownView {
     fn item<'a>(kind: parser::ItemKind, content: Vec<Span<'a>>, prefix: Span<'a>) -> Line<'a> {
         match kind {
             parser::ItemKind::Ordered(num) => Line::from(
-                [prefix, num.to_string().black(), ". ".into()]
+                [prefix, num.to_string().dark_gray(), ". ".into()]
                     .into_iter()
                     .chain(content)
                     .collect::<Vec<_>>(),
             ),
             parser::ItemKind::Unordered => Line::from(
-                [prefix, "- ".black()]
+                [prefix, "- ".dark_gray()]
                     .into_iter()
                     .chain(content)
                     .collect::<Vec<_>>(),

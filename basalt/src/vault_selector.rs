@@ -91,7 +91,7 @@ impl<'a> StatefulWidgetRef for VaultSelector<'a> {
         List::new(items)
             .block(
                 Block::bordered()
-                    .black()
+                    .dark_gray()
                     .title(" Vaults ")
                     .title_style(Style::default().italic().bold())
                     .border_type(BorderType::Rounded),

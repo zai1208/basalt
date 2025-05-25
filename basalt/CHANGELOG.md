@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1 (2025-05-25)
+
+### Changed
+
+- [Use dark gray color instead of black](https://github.com/erikjuhani/basalt/commit/237c7e436c76d61fe4339aa961e1f77a2ffbb43d)
+
 ## 0.4.0 (2025-05-25)
 
 ### Fixed

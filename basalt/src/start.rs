@@ -136,19 +136,22 @@ impl<'a> StatefulWidgetRef for StartScreen<'a> {
             .flex(Flex::Center)
             .areas(bottom);
 
-        Text::from_iter(LOGO).black().centered().render(logo, buf);
+        Text::from_iter(LOGO)
+            .dark_gray()
+            .centered()
+            .render(logo, buf);
 
         Text::from(TITLE).dark_gray().centered().render(title, buf);
 
         Text::from(state.version)
-            .black()
+            .dark_gray()
             .italic()
             .centered()
             .render(version, buf);
 
         Text::from("Press (?) for help")
             .italic()
-            .black()
+            .dark_gray()
             .centered()
             .render(help, buf);
 
