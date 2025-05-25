@@ -53,8 +53,18 @@ impl ObsidianConfig {
     /// _ = ObsidianConfig::load_from(Path::new("./dir-with-config-file"));
     /// ```
     pub fn load_from(config_path: &Path) -> Result<Self> {
-        let contents = fs::read_to_string(config_path.join("obsidian.json"))?;
-        Ok(serde_json::from_str(&contents)?)
+        let obsidian_json_path = config_path.join("obsidian.json");
+
+        if obsidian_json_path.try_exists()? {
+            let contents = fs::read_to_string(obsidian_json_path)?;
+            serde_json::from_str(&contents).map_err(Error::Json)
+        } else {
+            // TODO: Maybe a different error should be propagated in this case. E.g. 'unreadable'
+            // file.
+            Err(Error::PathNotFound(
+                obsidian_json_path.to_string_lossy().to_string(),
+            ))
+        }
     }
 
     /// Returns an iterator over the vaults in the configuration.
