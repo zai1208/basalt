@@ -9,35 +9,34 @@
 //! [`basalt_core::markdown::Node`] values. Each node is converted to one or more
 //! [`ratatui::text::Line`] objects.
 //!
-//! Example of rendered output
+//! # Example of rendered output
 //!
-//! ██ Headings
+//! Headings
+//! ════════════════════════════════════════════════════════════════
 //!
-//! █ This is a heading 1
+//! THIS IS A HEADING 1
+//! ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
 //!
-//! ██ This is a heading 2
+//! This is a heading 2
+//! ════════════════════════════════════════════════════════════════
+//! ⬤  This is a heading 3
 //!
-//! ▓▓▓ This is a heading 3
+//! ● This is a heading 4
 //!
-//! ▓▓▓▓ This is a heading 4
+//! ◆ 𝓣𝓱𝓲𝓼 𝓲𝓼 𝓪 𝓱𝓮𝓪𝓭𝓲𝓷𝓰 𝟓
 //!
-//! ▓▓▓▓▓ This is a heading 5
+//! ✺ 𝓣𝓱𝓲𝓼 𝓲𝓼 𝓪 𝓱𝓮𝓪𝓭𝓲𝓷𝓰 𝟔
 //!
-//! ░░░░░░ This is a heading 6
-//!
-//! ██ Quotes
-//!
+//! Quotes
+//! ════════════════════════════════════════════════════════════════
 //! You can quote text by adding a > symbols before the text.
 //!
-//! ┃ Human beings face ever more complex and urgent problems, and their effectiveness in dealing with these problems is a matter that is critical to the stability and continued progress of society.
+//! ┃ Human beings face ever more complex and urgent problems, and
+//! ┃ their effectiveness in dealing with these problems is a matter
+//! ┃ that is critical to the stability and continued progress of
+//! ┃ society.
 //! ┃
 //! ┃ - Doug Engelbart, 1961
-//!
-//! ██ Bold, italics, highlights
-//!
-//! This line will not be bold
-//!
-//! \*\*This line will not be bold\*\*
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
@@ -48,6 +47,8 @@ use ratatui::{
         StatefulWidgetRef, Widget,
     },
 };
+
+use crate::stylized_text::{stylize, FontStyle};
 
 use super::parser;
 
@@ -73,13 +74,13 @@ use super::state::MarkdownViewState;
 ///
 /// let expected = [
 ///   "╭──────────────────▲",
-///   "│█ Hello, world!   █",
 ///   "│                  █",
-///   "│This is a test.   █",
+///   "│ HELLO, WORLD!    █",
+///   "│ ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀ █",
+///   "│ This is a test.  █",
 ///   "│                  █",
 ///   "│                  █",
 ///   "│                  █",
-///   "│                  ║",
 ///   "│                  ║",
 ///   "╰──────────────────▼",
 /// ];
@@ -91,18 +92,6 @@ use super::state::MarkdownViewState;
 pub struct MarkdownView;
 
 impl MarkdownView {
-    fn heading(level: parser::HeadingLevel, content: Vec<Span>) -> Line {
-        let prefix = match level {
-            parser::HeadingLevel::H1 => Span::from("█ ").blue(),
-            parser::HeadingLevel::H2 => Span::from("██ ").cyan(),
-            parser::HeadingLevel::H3 => Span::from("▓▓▓ ").green(),
-            parser::HeadingLevel::H4 => Span::from("▓▓▓▓ ").yellow(),
-            parser::HeadingLevel::H5 => Span::from("▓▓▓▓▓ ").red(),
-            parser::HeadingLevel::H6 => Span::from("░░░░░░ ").red(),
-        };
-        Line::from([prefix].into_iter().chain(content).collect::<Vec<_>>()).bold()
-    }
-
     fn task<'a>(
         kind: parser::TaskListItemKind,
         content: Vec<Span<'a>>,
@@ -165,12 +154,16 @@ impl MarkdownView {
                         format!(
                             " {} {}",
                             line,
-                            (line.len()..width).map(|_| " ").collect::<String>()
+                            // We subtract two to take the white space into account, which are
+                            // added in the format string.
+                            (line.chars().count()..width - 2)
+                                .map(|_| " ")
+                                .collect::<String>()
                         )
                     })
                     .collect::<Vec<String>>()
             })
-            .map(|text| Line::from(text).bold().bg(Color::Black))
+            .map(|text| Line::from(text).bg(Color::Black))
             .collect()
     }
 
@@ -186,19 +179,58 @@ impl MarkdownView {
             .collect()
     }
 
+    fn heading<'a>(level: parser::HeadingLevel, text: String, width: usize) -> Vec<Line<'a>> {
+        match level {
+            parser::HeadingLevel::H1 => [
+                Line::default(),
+                Line::from(text.to_uppercase()).italic().bold(),
+                (0..width).map(|_| "▀").collect::<String>().into(),
+                Line::default(),
+            ]
+            .to_vec(),
+            parser::HeadingLevel::H2 => [
+                Line::from(text).bold().yellow(),
+                Line::from((0..width).map(|_| "═").collect::<String>()).yellow(),
+            ]
+            .to_vec(),
+            parser::HeadingLevel::H3 => [
+                Line::from(["⬤  ".into(), text.bold()].to_vec()).cyan(),
+                Line::default(),
+            ]
+            .to_vec(),
+            parser::HeadingLevel::H4 => [
+                Line::from(["● ".into(), text.bold()].to_vec()).magenta(),
+                Line::default(),
+            ]
+            .to_vec(),
+            parser::HeadingLevel::H5 => [
+                Line::from(["◆ ".into(), stylize(&text, FontStyle::Script).into()].to_vec()),
+                Line::default(),
+            ]
+            .to_vec(),
+            parser::HeadingLevel::H6 => [
+                Line::from(["✺ ".into(), stylize(&text, FontStyle::Script).into()].to_vec()),
+                Line::default(),
+            ]
+            .to_vec(),
+        }
+    }
+
     fn render_markdown<'a>(node: parser::Node, area: Rect, prefix: Span<'a>) -> Vec<Line<'a>> {
         match node.markdown_node {
             parser::MarkdownNode::Paragraph { text } => {
                 MarkdownView::wrap_with_prefix(text.into(), area.width.into(), prefix.clone())
                     .into_iter()
-                    .chain([Line::from(prefix)])
+                    .chain(if prefix.to_string().is_empty() {
+                        [Line::default()].to_vec()
+                    } else {
+                        [].to_vec()
+                    })
                     .collect::<Vec<_>>()
             }
-            parser::MarkdownNode::Heading { level, text } => [
-                MarkdownView::heading(level, MarkdownView::text_to_spans(text)),
-                Line::default(),
-            ]
-            .to_vec(),
+            parser::MarkdownNode::Heading { level, text } => {
+                MarkdownView::heading(level, text.into(), area.width.into())
+            }
             parser::MarkdownNode::Item { text } => [MarkdownView::item(
                 parser::ItemKind::Unordered,
                 MarkdownView::text_to_spans(text),
@@ -222,39 +254,70 @@ impl MarkdownView {
             parser::MarkdownNode::List { nodes, kind } => nodes
                 .into_iter()
                 .enumerate()
-                .flat_map(|(i, child)| {
-                    let parser::MarkdownNode::Item { text } = child.markdown_node else {
-                        return MarkdownView::render_markdown(child, area, prefix.clone());
-                    };
+                .flat_map(|(i, child)| match child.markdown_node {
+                    parser::MarkdownNode::TaskListItem { kind, text } => [MarkdownView::task(
+                        kind,
+                        MarkdownView::text_to_spans(text),
+                        prefix.clone(),
+                    )]
+                    .to_vec(),
+                    parser::MarkdownNode::Item { text } => {
+                        let item = match kind {
+                            parser::ListKind::Ordered(start) => MarkdownView::item(
+                                parser::ItemKind::Ordered(start + i as u64),
+                                MarkdownView::text_to_spans(text),
+                                prefix.clone(),
+                            ),
+                            _ => MarkdownView::item(
+                                parser::ItemKind::Unordered,
+                                MarkdownView::text_to_spans(text),
+                                prefix.clone(),
+                            ),
+                        };
 
-                    let item = match kind {
-                        parser::ListKind::Ordered(start) => MarkdownView::item(
-                            parser::ItemKind::Ordered(start + i as u64),
-                            MarkdownView::text_to_spans(text),
-                            prefix.clone(),
-                        ),
-                        _ => MarkdownView::item(
-                            parser::ItemKind::Unordered,
-                            MarkdownView::text_to_spans(text),
-                            prefix.clone(),
-                        ),
-                    };
-
-                    [item].to_vec()
+                        [item].to_vec()
+                    }
+                    _ => MarkdownView::render_markdown(
+                        child,
+                        area,
+                        Span::from(format!("  {}", prefix)),
+                    ),
                 })
-                .chain([Line::default()])
+                .chain(if prefix.to_string().is_empty() {
+                    [Line::default()].to_vec()
+                } else {
+                    [].to_vec()
+                })
                 .collect::<Vec<Line<'a>>>(),
 
             // TODO: Support callout block quote types
             parser::MarkdownNode::BlockQuote { nodes, .. } => nodes
-                .into_iter()
-                .flat_map(|child| {
-                    MarkdownView::render_markdown(child, area, Span::from("┃ ").magenta())
-                        .into_iter()
-                        .collect::<Vec<_>>()
+                .iter()
+                .map(|child| {
+                    // We need this to be a block of lines to make sure we enumarate and add
+                    // prefixed line breaks correctly.
+                    [MarkdownView::render_markdown(
+                        child.clone(),
+                        area,
+                        Span::from(prefix.to_string() + "┃ ").magenta(),
+                    )]
+                    .to_vec()
                 })
-                .map(|line| line.dark_gray())
-                .chain([Line::default()])
+                .enumerate()
+                .flat_map(|(i, mut line_blocks)| {
+                    if i != 0 && i != nodes.len() {
+                        line_blocks.insert(
+                            0,
+                            [Line::from(prefix.to_string() + "┃ ").magenta()].to_vec(),
+                        );
+                    }
+                    line_blocks.into_iter().flatten().collect::<Vec<_>>()
+                })
+                .chain(if prefix.to_string().is_empty() {
+                    [Line::default()].to_vec()
+                } else {
+                    [].to_vec()
+                })
                 .collect::<Vec<Line<'a>>>(),
         }
     }
@@ -289,5 +352,137 @@ impl StatefulWidgetRef for MarkdownView {
             buf,
             &mut scroll_state,
         );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use indoc::indoc;
+    use insta::assert_snapshot;
+    use ratatui::{backend::TestBackend, Terminal};
+
+    #[test]
+    fn test_render_markdown_view() {
+        let tests = [
+            indoc! { r#"## Headings
+
+            # This is a heading 1
+
+            ## This is a heading 2
+
+            ### This is a heading 3
+
+            #### This is a heading 4
+
+            ##### This is a heading 5
+
+            ###### This is a heading 6
+            "#},
+            indoc! { r#"## Quotes
+
+            You can quote text by adding a > symbols before the text.
+
+            > Human beings face ever more complex and urgent problems, and their effectiveness in dealing with these problems is a matter that is critical to the stability and continued progress of society.
+            >
+            > - Doug Engelbart, 1961
+            "#},
+            indoc! { r#"## Callout Blocks
+
+            > [!tip]
+            >
+            >You can turn your quote into a [callout](https://help.obsidian.md/Editing+and+formatting/Callouts) by adding `[!info]` as the first line in a quote.
+            "#},
+            indoc! { r#"## Deep Quotes
+
+            You can have deeper levels of quotes by adding a > symbols before the text inside the block quote.
+
+            > Regular thoughts
+            >
+            > > Deeper thoughts
+            > >
+            > > > Very deep thoughts
+            > > >
+            > > > - Someone on the internet 1996
+            >
+            > Back to regular thoughts
+            "#},
+            indoc! { r#"## Lists
+
+            You can create an unordered list by adding a `-`, `*`, or `+` before the text.
+
+            - First list item
+            - Second list item
+            - Third list item
+
+            To create an ordered list, start each line with a number followed by a `.` symbol.
+
+            1. First list item
+            2. Second list item
+            3. Third list item
+            "#},
+            indoc! { r#"## Indented Lists
+
+            Lists can be indented
+
+            - First list item
+              - Second list item
+                - Third list item
+
+            "#},
+            indoc! { r#"## Task lists
+
+            To create a task list, start each list item with a hyphen and space followed by `[ ]`.
+
+            - [x] This is a completed task.
+            - [ ] This is an incomplete task.
+
+            >You can use any character inside the brackets to mark it as complete.
+
+            - [x] Oats
+            - [?] Flour
+            - [d] Apples
+            "#},
+            indoc! { r#"## Code blocks
+
+            To format a block of code, surround the code with triple backticks.
+
+            ```
+            cd ~/Desktop
+            ```
+
+            You can also create a code block by indenting the text using `Tab` or 4 blank spaces.
+
+                cd ~/Desktop
+            "#},
+            indoc! { r#"## Code blocks
+
+            You can add syntax highlighting to a code block, by adding a language code after the first set of backticks.
+
+            ```js
+            function fancyAlert(arg) {
+              if(arg) {
+                $.facebox({div:'#foo'})
+              }
+            }
+            ```
+            "#},
+        ];
+
+        let mut terminal = Terminal::new(TestBackend::new(80, 20)).unwrap();
+
+        tests.iter().for_each(|text| {
+            _ = terminal.clear();
+            terminal
+                .draw(|frame| {
+                    MarkdownView.render_ref(
+                        frame.area(),
+                        frame.buffer_mut(),
+                        &mut MarkdownViewState::new(text),
+                    )
+                })
+                .unwrap();
+            assert_snapshot!(terminal.backend());
+        });
     }
 }

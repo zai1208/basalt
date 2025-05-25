@@ -10,13 +10,13 @@ TUI Application to manage Obsidian vaults and notes directly from the terminal â
 
 ## Installation
 
-For now unfortunately, you have to compile this binary yourself, if you want to run basalt. The next thing I'll be doing is adding a GitHub workflow to produce cross-platform binaries.
-
 Install basalt using cargo:
 
 ```sh
 cargo install basalt-tui
 ```
+
+Or use the precompiled binaries from the latest basalt release.
 
 ## Background
 
@@ -60,18 +60,20 @@ For now these are not configurable, but this will change when the configuration 
 - [x] Add help modal / popup with `?`
 - [x] Add vault selection screen with basalt logo (Splash screen)
 - [x] Add vault selector modal
-- [-] GitHub Workflows !
+- [x] GitHub Workflows !
     - [x] Run tests and build
     - [x] Run create release artifacts (cross-platform binaries)
     - [ ] Do not run test when pushing a tag
     - [ ] Run `vhs` when basalt directory changes and commit it to the current PR
+    - [ ] Run cargo publish in release workflow for basalt-tui
+- [ ] Add Homebrew formula
 - [ ] Add `mdbook` and `gh` pages
 - [ ] Persistent scroll state in help modal
 - [ ] Fuzzy search in panes (note, side panel, modals)
-- [ ] Markdown rendering
+- [-] Markdown rendering
     - [ ] Add support to all markdown nodes
-    - [ ] Improve and fix code block rendering, so it appears as a 'block'
     - [x] Add text formatting to different styles like `Fraktur` and `DoubleStruck` for heading purposes
+    - [x] Improve and fix code block rendering, so it appears as a 'block'
     - [ ] Support complete Obsidian Flavor
     - [ ] Add image rendering support
 - [ ] Note tree
