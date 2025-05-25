@@ -254,41 +254,34 @@ impl MarkdownView {
             parser::MarkdownNode::List { nodes, kind } => nodes
                 .into_iter()
                 .enumerate()
-                .flat_map(|(i, child)| {
-                    let parser::MarkdownNode::Item { text } = child.markdown_node else {
-                        match child.markdown_node {
-                            parser::MarkdownNode::TaskListItem { kind, text } => {
-                                return [MarkdownView::task(
-                                    kind,
-                                    MarkdownView::text_to_spans(text),
-                                    prefix.clone(),
-                                )]
-                                .to_vec();
-                            }
-                            _ => {
-                                return MarkdownView::render_markdown(
-                                    child,
-                                    area,
-                                    Span::from("  ".to_string() + &prefix.clone().to_string()),
-                                )
-                            }
-                        }
-                    };
+                .flat_map(|(i, child)| match child.markdown_node {
+                    parser::MarkdownNode::TaskListItem { kind, text } => [MarkdownView::task(
+                        kind,
+                        MarkdownView::text_to_spans(text),
+                        prefix.clone(),
+                    )]
+                    .to_vec(),
+                    parser::MarkdownNode::Item { text } => {
+                        let item = match kind {
+                            parser::ListKind::Ordered(start) => MarkdownView::item(
+                                parser::ItemKind::Ordered(start + i as u64),
+                                MarkdownView::text_to_spans(text),
+                                prefix.clone(),
+                            ),
+                            _ => MarkdownView::item(
+                                parser::ItemKind::Unordered,
+                                MarkdownView::text_to_spans(text),
+                                prefix.clone(),
+                            ),
+                        };
 
-                    let item = match kind {
-                        parser::ListKind::Ordered(start) => MarkdownView::item(
-                            parser::ItemKind::Ordered(start + i as u64),
-                            MarkdownView::text_to_spans(text),
-                            prefix.clone(),
-                        ),
-                        _ => MarkdownView::item(
-                            parser::ItemKind::Unordered,
-                            MarkdownView::text_to_spans(text),
-                            prefix.clone(),
-                        ),
-                    };
-
-                    [item].to_vec()
+                        [item].to_vec()
+                    }
+                    _ => MarkdownView::render_markdown(
+                        child,
+                        area,
+                        Span::from(format!("  {}", prefix)),
+                    ),
                 })
                 .chain(if prefix.to_string().is_empty() {
                     [Line::default()].to_vec()
