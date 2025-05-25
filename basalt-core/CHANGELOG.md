@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.5.0 (2025-05-25)
+
+### obsidian
+
+#### Breaking
+
+- [Return `Vec` instead of `Iterator` from `notes()`](https://github.com/erikjuhani/basalt/commit/d56f2529971f54e8931f31ed32e2651087050c24)
+- [Remove `created` field from Note as obsolete](https://github.com/erikjuhani/basalt/commit/fa17bf67ed13f002b8a97c259c18013a19756907)
+
+#### Changed
+
+- [Use try_exists in load_from for global Obsidian config](https://github.com/erikjuhani/basalt/commit/9f5359ddf38b9b3482f066c3b3bbc3339d4fb2ff)
+
+#### Fixed
+
+- [Get all potential obsidian global config locations](https://github.com/erikjuhani/basalt/commit/a5136b18ea87d00c5ca53bb539910df22582f260)
+
 ## 0.4.3 (2025-05-21)
 
 ### Fixed
