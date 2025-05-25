@@ -79,7 +79,7 @@ impl StatefulWidget for HelpModal {
         Self: Sized,
     {
         let block = Block::bordered()
-            .black()
+            .dark_gray()
             .border_type(BorderType::Rounded)
             .padding(Padding::uniform(1))
             .title_style(Style::default().italic().bold())

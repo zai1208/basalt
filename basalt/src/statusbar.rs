@@ -44,10 +44,10 @@ impl<'a> StatefulWidgetRef for StatusBar<'a> {
             .meta
             .map(|meta| {
                 [
-                    Span::from(" ").bg(Color::Black),
-                    Span::from(meta).bg(Color::Black).gray().bold(),
-                    Span::from(" ").bg(Color::Black),
-                    Span::from("").black(),
+                    Span::from(" ").bg(Color::DarkGray),
+                    Span::from(meta).bg(Color::DarkGray).gray().bold(),
+                    Span::from(" ").bg(Color::DarkGray),
+                    Span::from("").dark_gray(),
                 ]
             })
             .unwrap_or_default();
@@ -60,7 +60,7 @@ impl<'a> StatefulWidgetRef for StatusBar<'a> {
                 Span::from(" ").bg(Color::Magenta),
                 Span::from("")
                     .bg(if state.meta.is_some() {
-                        Color::Black
+                        Color::DarkGray
                     } else {
                         Color::default()
                     })
