@@ -28,7 +28,7 @@ pub struct Vault {
 }
 
 impl Vault {
-    /// Returns an iterator over Markdown (`.md`) files in this vault as [`Note`] structs.
+    /// Returns a [`Vec`] of Markdown (`.md`) files in this vault as [`Note`] structs.
     ///
     /// # Examples
     ///
@@ -41,13 +41,14 @@ impl Vault {
     ///     ..Default::default()
     /// };
     ///
-    /// assert_eq!(vault.notes().collect::<Vec<_>>(), vec![]);
+    /// assert_eq!(vault.notes(), vec![]);
     /// ```
-    pub fn notes(&self) -> impl Iterator<Item = Note> {
+    pub fn notes(&self) -> Vec<Note> {
         read_dir(&self.path)
             .into_iter()
             .flatten()
             .filter_map(|entry| Option::<Note>::from(DirEntry::from(entry.ok()?)))
+            .collect()
     }
 
     /// Returns a sorted vector [`Vec<Note>`] of all notes in the vault, sorted according to the
@@ -70,7 +71,7 @@ impl Vault {
     /// _ = vault.notes_sorted_by(alphabetically);
     /// ```
     pub fn notes_sorted_by(&self, compare: impl Fn(&Note, &Note) -> Ordering) -> Vec<Note> {
-        let mut notes: Vec<Note> = self.notes().collect();
+        let mut notes: Vec<Note> = self.notes();
         notes.sort_by(compare);
         notes
     }
