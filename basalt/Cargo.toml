@@ -19,6 +19,7 @@ textwrap = "0.16.2"
 
 [dev-dependencies]
 indoc = "2"
+insta = "1.43.1"
 
 [[bin]]
 name = "basalt"

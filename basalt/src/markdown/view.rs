@@ -355,48 +355,134 @@ impl StatefulWidgetRef for MarkdownView {
     }
 }
 
-// TODO: Add tests
-//
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use indoc::indoc;
-//     use ratatui::{backend::TestBackend, Terminal};
-//
-//     #[test]
-//     fn test() {
-//         let tests = [(
-//             indoc! {r#"# Heading 1
-//
-//                 ## Heading 2
-//
-//                 ### Heading 3
-//
-//                 #### Heading 4
-//
-//                 ##### Heading 5
-//
-//                 ###### Heading 6
-//                 "#},
-//             indoc! {r#"
-//
-//                 "#},
-//         )];
-//
-//         tests.iter().for_each(|test| {
-//             let mut state = MarkdownViewState::new(test.0);
-//
-//             let area = Rect::new(0, 0, 20, 10);
-//             let mut buffer = Buffer::empty(area);
-//
-//             MarkdownView.render_ref(area, &mut buffer, &mut state);
-//             // println!("{:?}", terminal.backend().buffer());
-//             let symbols = buffer
-//                 .content()
-//                 .iter()
-//                 .map(|cell| cell.symbol())
-//                 .collect::<Vec<&str>>();
-//             assert_eq!(symbols, test.1.lines().collect::<Vec<_>>());
-//         });
-//     }
-// }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use indoc::indoc;
+    use insta::assert_snapshot;
+    use ratatui::{backend::TestBackend, Terminal};
+
+    #[test]
+    fn test_render_markdown_view() {
+        let tests = [
+            indoc! { r#"## Headings
+
+            # This is a heading 1
+
+            ## This is a heading 2
+
+            ### This is a heading 3
+
+            #### This is a heading 4
+
+            ##### This is a heading 5
+
+            ###### This is a heading 6
+            "#},
+            indoc! { r#"## Quotes
+
+            You can quote text by adding a > symbols before the text.
+
+            > Human beings face ever more complex and urgent problems, and their effectiveness in dealing with these problems is a matter that is critical to the stability and continued progress of society.
+            >
+            > - Doug Engelbart, 1961
+            "#},
+            indoc! { r#"## Callout Blocks
+
+            > [!tip]
+            >
+            >You can turn your quote into a [callout](https://help.obsidian.md/Editing+and+formatting/Callouts) by adding `[!info]` as the first line in a quote.
+            "#},
+            indoc! { r#"## Deep Quotes
+
+            You can have deeper levels of quotes by adding a > symbols before the text inside the block quote.
+
+            > Regular thoughts
+            >
+            > > Deeper thoughts
+            > >
+            > > > Very deep thoughts
+            > > >
+            > > > - Someone on the internet 1996
+            >
+            > Back to regular thoughts
+            "#},
+            indoc! { r#"## Lists
+
+            You can create an unordered list by adding a `-`, `*`, or `+` before the text.
+
+            - First list item
+            - Second list item
+            - Third list item
+
+            To create an ordered list, start each line with a number followed by a `.` symbol.
+
+            1. First list item
+            2. Second list item
+            3. Third list item
+            "#},
+            indoc! { r#"## Indented Lists
+
+            Lists can be indented
+
+            - First list item
+              - Second list item
+                - Third list item
+
+            "#},
+            indoc! { r#"## Task lists
+
+            To create a task list, start each list item with a hyphen and space followed by `[ ]`.
+
+            - [x] This is a completed task.
+            - [ ] This is an incomplete task.
+
+            >You can use any character inside the brackets to mark it as complete.
+
+            - [x] Oats
+            - [?] Flour
+            - [d] Apples
+            "#},
+            indoc! { r#"## Code blocks
+
+            To format a block of code, surround the code with triple backticks.
+
+            ```
+            cd ~/Desktop
+            ```
+
+            You can also create a code block by indenting the text using `Tab` or 4 blank spaces.
+
+                cd ~/Desktop
+            "#},
+            indoc! { r#"## Code blocks
+
+            You can add syntax highlighting to a code block, by adding a language code after the first set of backticks.
+
+            ```js
+            function fancyAlert(arg) {
+              if(arg) {
+                $.facebox({div:'#foo'})
+              }
+            }
+            ```
+            "#},
+        ];
+
+        let mut terminal = Terminal::new(TestBackend::new(80, 20)).unwrap();
+
+        tests.iter().for_each(|text| {
+            _ = terminal.clear();
+            terminal
+                .draw(|frame| {
+                    MarkdownView.render_ref(
+                        frame.area(),
+                        frame.buffer_mut(),
+                        &mut MarkdownViewState::new(text),
+                    )
+                })
+                .unwrap();
+            assert_snapshot!(terminal.backend());
+        });
+    }
+}
