@@ -9,35 +9,34 @@
 //! [`basalt_core::markdown::Node`] values. Each node is converted to one or more
 //! [`ratatui::text::Line`] objects.
 //!
-//! Example of rendered output
+//! # Example of rendered output
 //!
-//! ██ Headings
+//! Headings
+//! ════════════════════════════════════════════════════════════════
 //!
-//! █ This is a heading 1
+//! THIS IS A HEADING 1
+//! ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
 //!
-//! ██ This is a heading 2
+//! This is a heading 2
+//! ════════════════════════════════════════════════════════════════
+//! ⬤  This is a heading 3
 //!
-//! ▓▓▓ This is a heading 3
+//! ● This is a heading 4
 //!
-//! ▓▓▓▓ This is a heading 4
+//! ◆ 𝓣𝓱𝓲𝓼 𝓲𝓼 𝓪 𝓱𝓮𝓪𝓭𝓲𝓷𝓰 𝟓
 //!
-//! ▓▓▓▓▓ This is a heading 5
+//! ✺ 𝓣𝓱𝓲𝓼 𝓲𝓼 𝓪 𝓱𝓮𝓪𝓭𝓲𝓷𝓰 𝟔
 //!
-//! ░░░░░░ This is a heading 6
-//!
-//! ██ Quotes
-//!
+//! Quotes
+//! ════════════════════════════════════════════════════════════════
 //! You can quote text by adding a > symbols before the text.
 //!
-//! ┃ Human beings face ever more complex and urgent problems, and their effectiveness in dealing with these problems is a matter that is critical to the stability and continued progress of society.
+//! ┃ Human beings face ever more complex and urgent problems, and
+//! ┃ their effectiveness in dealing with these problems is a matter
+//! ┃ that is critical to the stability and continued progress of
+//! ┃ society.
 //! ┃
 //! ┃ - Doug Engelbart, 1961
-//!
-//! ██ Bold, italics, highlights
-//!
-//! This line will not be bold
-//!
-//! \*\*This line will not be bold\*\*
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
@@ -48,6 +47,8 @@ use ratatui::{
         StatefulWidgetRef, Widget,
     },
 };
+
+use crate::stylized_text::{stylize, FontStyle};
 
 use super::parser;
 
@@ -73,13 +74,13 @@ use super::state::MarkdownViewState;
 ///
 /// let expected = [
 ///   "╭──────────────────▲",
-///   "│█ Hello, world!   █",
 ///   "│                  █",
-///   "│This is a test.   █",
+///   "│ HELLO, WORLD!    █",
+///   "│ ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀ █",
+///   "│ This is a test.  █",
 ///   "│                  █",
 ///   "│                  █",
 ///   "│                  █",
-///   "│                  ║",
 ///   "│                  ║",
 ///   "╰──────────────────▼",
 /// ];
@@ -91,18 +92,6 @@ use super::state::MarkdownViewState;
 pub struct MarkdownView;
 
 impl MarkdownView {
-    fn heading(level: parser::HeadingLevel, content: Vec<Span>) -> Line {
-        let prefix = match level {
-            parser::HeadingLevel::H1 => Span::from("█ ").blue(),
-            parser::HeadingLevel::H2 => Span::from("██ ").cyan(),
-            parser::HeadingLevel::H3 => Span::from("▓▓▓ ").green(),
-            parser::HeadingLevel::H4 => Span::from("▓▓▓▓ ").yellow(),
-            parser::HeadingLevel::H5 => Span::from("▓▓▓▓▓ ").red(),
-            parser::HeadingLevel::H6 => Span::from("░░░░░░ ").red(),
-        };
-        Line::from([prefix].into_iter().chain(content).collect::<Vec<_>>()).bold()
-    }
-
     fn task<'a>(
         kind: parser::TaskListItemKind,
         content: Vec<Span<'a>>,
@@ -190,6 +179,43 @@ impl MarkdownView {
             .collect()
     }
 
+    fn heading<'a>(level: parser::HeadingLevel, text: String, width: usize) -> Vec<Line<'a>> {
+        match level {
+            parser::HeadingLevel::H1 => [
+                Line::default(),
+                Line::from(text.to_uppercase()).italic().bold(),
+                (0..width).map(|_| "▀").collect::<String>().into(),
+                Line::default(),
+            ]
+            .to_vec(),
+            parser::HeadingLevel::H2 => [
+                Line::from(text).bold().yellow(),
+                Line::from((0..width).map(|_| "═").collect::<String>()).yellow(),
+            ]
+            .to_vec(),
+            parser::HeadingLevel::H3 => [
+                Line::from(["⬤  ".into(), text.bold()].to_vec()).cyan(),
+                Line::default(),
+            ]
+            .to_vec(),
+            parser::HeadingLevel::H4 => [
+                Line::from(["● ".into(), text.bold()].to_vec()).magenta(),
+                Line::default(),
+            ]
+            .to_vec(),
+            parser::HeadingLevel::H5 => [
+                Line::from(["◆ ".into(), stylize(&text, FontStyle::Script).into()].to_vec()),
+                Line::default(),
+            ]
+            .to_vec(),
+            parser::HeadingLevel::H6 => [
+                Line::from(["✺ ".into(), stylize(&text, FontStyle::Script).into()].to_vec()),
+                Line::default(),
+            ]
+            .to_vec(),
+        }
+    }
+
     fn render_markdown<'a>(node: parser::Node, area: Rect, prefix: Span<'a>) -> Vec<Line<'a>> {
         match node.markdown_node {
             parser::MarkdownNode::Paragraph { text } => {
@@ -198,11 +224,9 @@ impl MarkdownView {
                     .chain([Line::from(prefix)])
                     .collect::<Vec<_>>()
             }
-            parser::MarkdownNode::Heading { level, text } => [
-                MarkdownView::heading(level, MarkdownView::text_to_spans(text)),
-                Line::default(),
-            ]
-            .to_vec(),
+            parser::MarkdownNode::Heading { level, text } => {
+                MarkdownView::heading(level, text.into(), area.width.into())
+            }
             parser::MarkdownNode::Item { text } => [MarkdownView::item(
                 parser::ItemKind::Unordered,
                 MarkdownView::text_to_spans(text),
@@ -295,3 +319,49 @@ impl StatefulWidgetRef for MarkdownView {
         );
     }
 }
+
+// TODO: Add tests
+//
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+//     use indoc::indoc;
+//     use ratatui::{backend::TestBackend, Terminal};
+//
+//     #[test]
+//     fn test() {
+//         let tests = [(
+//             indoc! {r#"# Heading 1
+//
+//                 ## Heading 2
+//
+//                 ### Heading 3
+//
+//                 #### Heading 4
+//
+//                 ##### Heading 5
+//
+//                 ###### Heading 6
+//                 "#},
+//             indoc! {r#"
+//
+//                 "#},
+//         )];
+//
+//         tests.iter().for_each(|test| {
+//             let mut state = MarkdownViewState::new(test.0);
+//
+//             let area = Rect::new(0, 0, 20, 10);
+//             let mut buffer = Buffer::empty(area);
+//
+//             MarkdownView.render_ref(area, &mut buffer, &mut state);
+//             // println!("{:?}", terminal.backend().buffer());
+//             let symbols = buffer
+//                 .content()
+//                 .iter()
+//                 .map(|cell| cell.symbol())
+//                 .collect::<Vec<&str>>();
+//             assert_eq!(symbols, test.1.lines().collect::<Vec<_>>());
+//         });
+//     }
+// }
