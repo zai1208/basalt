@@ -221,7 +221,11 @@ impl MarkdownView {
             parser::MarkdownNode::Paragraph { text } => {
                 MarkdownView::wrap_with_prefix(text.into(), area.width.into(), prefix.clone())
                     .into_iter()
-                    .chain([Line::from(prefix)])
+                    .chain(if prefix.to_string().is_empty() {
+                        [Line::default()].to_vec()
+                    } else {
+                        [].to_vec()
+                    })
                     .collect::<Vec<_>>()
             }
             parser::MarkdownNode::Heading { level, text } => {
@@ -286,19 +290,41 @@ impl MarkdownView {
 
                     [item].to_vec()
                 })
-                .chain([Line::default()])
+                .chain(if prefix.to_string().is_empty() {
+                    [Line::default()].to_vec()
+                } else {
+                    [].to_vec()
+                })
                 .collect::<Vec<Line<'a>>>(),
 
             // TODO: Support callout block quote types
             parser::MarkdownNode::BlockQuote { nodes, .. } => nodes
-                .into_iter()
-                .flat_map(|child| {
-                    MarkdownView::render_markdown(child, area, Span::from("┃ ").magenta())
-                        .into_iter()
-                        .collect::<Vec<_>>()
+                .iter()
+                .map(|child| {
+                    // We need this to be a block of lines to make sure we enumarate and add
+                    // prefixed line breaks correctly.
+                    [MarkdownView::render_markdown(
+                        child.clone(),
+                        area,
+                        Span::from(prefix.to_string() + "┃ ").magenta(),
+                    )]
+                    .to_vec()
                 })
-                .map(|line| line.dark_gray())
-                .chain([Line::default()])
+                .enumerate()
+                .flat_map(|(i, mut line_blocks)| {
+                    if i != 0 && i != nodes.len() {
+                        line_blocks.insert(
+                            0,
+                            [Line::from(prefix.to_string() + "┃ ").magenta()].to_vec(),
+                        );
+                    }
+                    line_blocks.into_iter().flatten().collect::<Vec<_>>()
+                })
+                .chain(if prefix.to_string().is_empty() {
+                    [Line::default()].to_vec()
+                } else {
+                    [].to_vec()
+                })
                 .collect::<Vec<Line<'a>>>(),
         }
     }
