@@ -28,7 +28,7 @@ pub struct Vault {
 }
 
 impl Vault {
-    /// Returns an iterator over Markdown (`.md`) files in this vault as [`Note`] structs.
+    /// Returns a [`Vec`] of Markdown (`.md`) files in this vault as [`Note`] structs.
     ///
     /// # Examples
     ///
@@ -41,13 +41,14 @@ impl Vault {
     ///     ..Default::default()
     /// };
     ///
-    /// assert_eq!(vault.notes().collect::<Vec<_>>(), vec![]);
+    /// assert_eq!(vault.notes(), vec![]);
     /// ```
-    pub fn notes(&self) -> impl Iterator<Item = Note> {
+    pub fn notes(&self) -> Vec<Note> {
         read_dir(&self.path)
             .into_iter()
             .flatten()
             .filter_map(|entry| Option::<Note>::from(DirEntry::from(entry.ok()?)))
+            .collect()
     }
 
     /// Returns a sorted vector [`Vec<Note>`] of all notes in the vault, sorted according to the
@@ -70,7 +71,7 @@ impl Vault {
     /// _ = vault.notes_sorted_by(alphabetically);
     /// ```
     pub fn notes_sorted_by(&self, compare: impl Fn(&Note, &Note) -> Ordering) -> Vec<Note> {
-        let mut notes: Vec<Note> = self.notes().collect();
+        let mut notes: Vec<Note> = self.notes();
         notes.sort_by(compare);
         notes
     }
@@ -116,6 +117,12 @@ impl<'de> Deserialize<'de> for Vault {
 #[derive(Debug)]
 struct DirEntry(fs::DirEntry);
 
+impl AsRef<fs::DirEntry> for DirEntry {
+    fn as_ref(&self) -> &fs::DirEntry {
+        &self.0
+    }
+}
+
 impl From<fs::DirEntry> for DirEntry {
     fn from(value: fs::DirEntry) -> Self {
         DirEntry(value)
@@ -125,9 +132,7 @@ impl From<fs::DirEntry> for DirEntry {
 impl From<DirEntry> for Option<Note> {
     /// Transforms path with extension `.md` into [`Option<Note>`].
     fn from(value: DirEntry) -> Option<Note> {
-        let dir = value.0;
-        let created = dir.metadata().ok()?.created().ok()?;
-        let path = dir.path();
+        let path = value.as_ref().path();
 
         if path.extension()? != "md" {
             return None;
@@ -138,10 +143,6 @@ impl From<DirEntry> for Option<Note> {
             .file_name()
             .map(|file_name| file_name.to_string_lossy().into_owned())?;
 
-        Some(Note {
-            name,
-            path,
-            created,
-        })
+        Some(Note { name, path })
     }
 }

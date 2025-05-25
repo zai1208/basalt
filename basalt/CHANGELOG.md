@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0 (2025-05-25)
+
+### Fixed
+
+- [Update basalt-core to version 0.5.0](https://github.com/erikjuhani/basalt/commit/a30d611b79a98b661aabd27eca0c8caa69e27fa8), which potentially fixes #44
+
+Check basalt-core CHANGELOG [here](../basalt-core/CHANGELOG.md).
+
 ## 0.3.7 (2025-05-22)
 
 ### Added
