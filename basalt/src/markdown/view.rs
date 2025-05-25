@@ -252,7 +252,23 @@ impl MarkdownView {
                 .enumerate()
                 .flat_map(|(i, child)| {
                     let parser::MarkdownNode::Item { text } = child.markdown_node else {
-                        return MarkdownView::render_markdown(child, area, prefix.clone());
+                        match child.markdown_node {
+                            parser::MarkdownNode::TaskListItem { kind, text } => {
+                                return [MarkdownView::task(
+                                    kind,
+                                    MarkdownView::text_to_spans(text),
+                                    prefix.clone(),
+                                )]
+                                .to_vec();
+                            }
+                            _ => {
+                                return MarkdownView::render_markdown(
+                                    child,
+                                    area,
+                                    Span::from("  ".to_string() + &prefix.clone().to_string()),
+                                )
+                            }
+                        }
                     };
 
                     let item = match kind {
