@@ -1,30 +1,15 @@
-use std::{fs, path::PathBuf, time::SystemTime};
+use std::{fs, path::PathBuf};
 
 use crate::obsidian::{Error, Result};
 
 /// Represents a single note (Markdown file) within a vault.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Note {
     /// The base filename without `.md` extension.
     pub name: String,
 
     /// Filesystem path to the `.md` file.
     pub path: PathBuf,
-
-    /// File creation time.
-    ///
-    /// TODO: Use chrono or time crates for better time format handling
-    pub created: SystemTime,
-}
-
-impl Default for Note {
-    fn default() -> Self {
-        Self {
-            name: String::default(),
-            path: PathBuf::default(),
-            created: SystemTime::UNIX_EPOCH,
-        }
-    }
 }
 
 impl Note {
@@ -38,7 +23,6 @@ impl Note {
     /// let note = Note {
     ///     name: "Example".to_string(),
     ///     path: "path/to/Example.md".into(),
-    ///     ..Default::default()
     /// };
     ///
     /// _ = Note::read_to_string(&note);
@@ -47,7 +31,7 @@ impl Note {
         fs::read_to_string(&note.path).map_err(Error::Io)
     }
 
-    /// Writes given content to notes path.
+    /// Replaces the content in the notes' markdown file with the given content.
     ///
     /// # Examples
     ///
@@ -57,7 +41,6 @@ impl Note {
     /// let note = Note {
     ///     name: "Example".to_string(),
     ///     path: "path/to/Example.md".into(),
-    ///     ..Default::default()
     /// };
     ///
     /// _ = Note::write(&note, String::from("# Heading"));
