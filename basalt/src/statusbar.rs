@@ -77,11 +77,11 @@ impl<'a> StatefulWidgetRef for StatusBar<'a> {
                 .flex(Flex::End)
                 .areas(right);
 
-        Text::from(format!("{} words", state.word_count))
+        Text::from(format!("{} word{}", state.word_count, if state.word_count == 1 { "" } else { "s" }))
             .right_aligned()
             .render(word_count, buf);
 
-        Text::from(format!("{} chars", state.char_count))
+        Text::from(format!("{} char{}", state.char_count, if state.char_count == 1 { "" } else { "s" }))
             .right_aligned()
             .render(char_count, buf);
     }
