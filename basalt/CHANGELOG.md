@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.0 (2025-06-01)
+
+### Added
+
+- [Add `Explorer` module](https://github.com/erikjuhani/basalt/commit/5d1f05fcbe5c0add6f687512fc3cf538a2df1148)
+
+### Fixed
+
+- [Fix large size difference between variants](https://github.com/erikjuhani/basalt/commit/159ae7ab22ab5cd4351075b2fe526a5628cfb3b9)
+
 ## 0.5.0 (2025-05-25)
 
 ### Fixed
