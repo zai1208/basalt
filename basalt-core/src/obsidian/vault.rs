@@ -1,13 +1,8 @@
-use std::{
-    cmp::Ordering,
-    fs::{self, read_dir},
-    path::{Path, PathBuf},
-    result,
-};
+use std::{path::PathBuf, result};
 
 use serde::{Deserialize, Deserializer};
 
-use crate::obsidian::Note;
+use super::vault_entry::VaultEntry;
 
 /// Represents a single Obsidian vault.
 ///
@@ -28,7 +23,11 @@ pub struct Vault {
 }
 
 impl Vault {
-    /// Returns a [`Vec`] of Markdown (`.md`) files in this vault as [`Note`] structs.
+    /// Returns a [`Vec`] of Markdown vault entries in this vault as [`VaultEntry`] structs.
+    /// Entries can be either directories or files (notes). If the directory is marked hidden with
+    /// a dot (`.`) prefix it will be filtered out from the resulting [`Vec`].
+    ///
+    /// The returned entries are not sorted.
     ///
     /// # Examples
     ///
@@ -41,39 +40,16 @@ impl Vault {
     ///     ..Default::default()
     /// };
     ///
-    /// assert_eq!(vault.notes(), vec![]);
+    /// assert_eq!(vault.entries(), vec![]);
     /// ```
-    pub fn notes(&self) -> Vec<Note> {
-        read_dir(&self.path)
-            .into_iter()
-            .flatten()
-            .filter_map(|entry| Option::<Note>::from(DirEntry::from(entry.ok()?)))
-            .collect()
-    }
-
-    /// Returns a sorted vector [`Vec<Note>`] of all notes in the vault, sorted according to the
-    /// provided comparison function.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use std::cmp::Ordering;
-    /// use basalt_core::obsidian::{Vault, Note};
-    ///
-    /// let vault = Vault {
-    ///     name: "MyVault".to_string(),
-    ///     path: "path/to/my_vault".into(),
-    ///     ..Default::default()
-    /// };
-    ///
-    /// let alphabetically = |a: &Note, b: &Note| a.name.to_lowercase().cmp(&b.name.to_lowercase());
-    ///
-    /// _ = vault.notes_sorted_by(alphabetically);
-    /// ```
-    pub fn notes_sorted_by(&self, compare: impl Fn(&Note, &Note) -> Ordering) -> Vec<Note> {
-        let mut notes: Vec<Note> = self.notes();
-        notes.sort_by(compare);
-        notes
+    pub fn entries(&self) -> Vec<VaultEntry> {
+        match self.path.as_path().try_into() {
+            Ok(VaultEntry::Directory { entries, .. }) => entries
+                .into_iter()
+                .filter(|entry| !entry.name().starts_with('.'))
+                .collect(),
+            _ => vec![],
+        }
     }
 }
 
@@ -91,58 +67,22 @@ impl<'de> Deserialize<'de> for Vault {
 
         impl TryFrom<Json> for Vault {
             type Error = String;
-            fn try_from(value: Json) -> Result<Self, Self::Error> {
-                let path = Path::new(&value.path);
+            fn try_from(Json { path, open, ts }: Json) -> result::Result<Self, Self::Error> {
                 let name = path
                     .file_name()
-                    .ok_or_else(|| String::from("unable to retrieve vault name"))?
-                    .to_string_lossy()
-                    .to_string();
+                    .map(|file_name| file_name.to_string_lossy().to_string())
+                    .ok_or("unable to retrieve vault name")?;
+
                 Ok(Vault {
                     name,
-                    path: value.path,
-                    open: value.open.unwrap_or_default(),
-                    ts: value.ts,
+                    path,
+                    open: open.unwrap_or(false),
+                    ts,
                 })
             }
         }
 
         let deserialized: Json = Deserialize::deserialize(deserializer)?;
         deserialized.try_into().map_err(serde::de::Error::custom)
-    }
-}
-
-/// Internal wrapper for directory entries to implement custom conversion between [`fs::DirEntry`]
-/// and [`Option<Note>`].
-#[derive(Debug)]
-struct DirEntry(fs::DirEntry);
-
-impl AsRef<fs::DirEntry> for DirEntry {
-    fn as_ref(&self) -> &fs::DirEntry {
-        &self.0
-    }
-}
-
-impl From<fs::DirEntry> for DirEntry {
-    fn from(value: fs::DirEntry) -> Self {
-        DirEntry(value)
-    }
-}
-
-impl From<DirEntry> for Option<Note> {
-    /// Transforms path with extension `.md` into [`Option<Note>`].
-    fn from(value: DirEntry) -> Option<Note> {
-        let path = value.as_ref().path();
-
-        if path.extension()? != "md" {
-            return None;
-        }
-
-        let name = path
-            .with_extension("")
-            .file_name()
-            .map(|file_name| file_name.to_string_lossy().into_owned())?;
-
-        Some(Note { name, path })
     }
 }

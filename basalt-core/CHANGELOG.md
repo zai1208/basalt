@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0 (2025-06-01)
+
+### obsidian
+
+#### Breaking
+
+- [Add `VaultEntry` to obsidian module and remove old implementation](https://github.com/erikjuhani/basalt/commit/f1fe41e0d6933d6e523094c60bacada411d07d68)
+
 ## 0.5.0 (2025-05-25)
 
 ### obsidian

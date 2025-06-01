@@ -63,6 +63,7 @@ MODES
             ‹t›         Toggle side panel visibility and select mode
             ‹k›         Move selection up
             ‹j›         Move selection down
+            ‹s›         Toggle note sorting
             ‹↑ / ↓›     Scroll selected note content up / down
             ‹↩ Enter›   Select the highlighted note
 
@@ -98,6 +99,7 @@ KEY BINDINGS
   ‹t›         Toggle side panel visibility and select mode
   ‹k›         Move selection up
   ‹j›         Move selection down
+  ‹s›         Toggle note sorting
   ‹↑ / ↓›     Scroll selected up / down
   ‹↩ Enter›   Select the highlighted note
 
@@ -109,16 +111,17 @@ KEY BINDINGS
 
 FEATURES
 
-  • Navigate and open notes from the active Obsidian Vault.
-  • View markdown notes in a readable, custom styled format.
+  • Navigate and read notes from any Obsidian Vault using terminal
+  • Nested folders and notes are supported
+  • View markdown notes in a readable, custom styled format
 
 ───────────────────────────────────────────────────────────────────────────────
 
 KNOWN LIMITATIONS
 
-  • Images are not rendered.
-  • External links are not clickable.
-  • Nested folders are not supported.
-  • Notes cannot be modified.
-  • Key bindings cannot be changed with configuration.
-
+  • Images are not rendered
+  • External links are not clickable
+  • Notes cannot be modified
+  • Key bindings cannot be changed with configuration
+  • There is no syntax highlighting for code blocks
+  • Markdown inline text styles are not rendered

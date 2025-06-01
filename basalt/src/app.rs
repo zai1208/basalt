@@ -1,5 +1,5 @@
 use super::markdown::{MarkdownView, MarkdownViewState};
-use basalt_core::obsidian::{Note, Vault};
+use basalt_core::obsidian::{FindNote, Note, Vault, VaultEntry};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{
     buffer::Buffer,
@@ -11,8 +11,8 @@ use ratatui::{
 use std::{cell::RefCell, io::Result, marker::PhantomData};
 
 use crate::{
+    explorer::{Explorer, ExplorerState},
     help_modal::{HelpModal, HelpModalState},
-    sidepanel::{SidePanel, SidePanelState},
     start::{StartScreen, StartState},
     statusbar::{StatusBar, StatusBarState},
     text_counts::{CharCount, WordCount},
@@ -58,6 +58,7 @@ fn calc_scroll_amount(scroll_amount: ScrollAmount, size: Size) -> usize {
 #[derive(Debug, PartialEq)]
 pub enum Action {
     Select,
+    ToggleSort,
     Next,
     Prev,
     Insert,
@@ -77,20 +78,25 @@ pub struct Start<'a> {
 
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Main<'a> {
-    pub sidepanel_state: SidePanelState<'a>,
+    pub explorer_state: ExplorerState<'a>,
     pub selected_note: Option<SelectedNote>,
     pub markdown_view_state: MarkdownViewState,
-    pub notes: Vec<Note>,
+    pub notes: Vec<VaultEntry>,
     pub vaults: Vec<&'a Vault>,
     pub size: Size,
     pub mode: Mode,
 }
 
 impl<'a> Main<'a> {
-    fn new(vault_name: &'a str, notes: Vec<Note>, size: Size, vaults: Vec<&'a Vault>) -> Self {
+    fn new(
+        vault_name: &'a str,
+        notes: Vec<VaultEntry>,
+        size: Size,
+        vaults: Vec<&'a Vault>,
+    ) -> Self {
         Self {
             notes: notes.clone(),
-            sidepanel_state: SidePanelState::new(vault_name, notes),
+            explorer_state: ExplorerState::new(vault_name, notes),
             vaults,
             size,
             ..Default::default()
@@ -98,10 +104,16 @@ impl<'a> Main<'a> {
     }
 }
 
+impl<'a> From<Box<Main<'a>>> for Main<'a> {
+    fn from(value: Box<Main<'a>>) -> Self {
+         *value
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Screen<'a> {
     Start(Start<'a>),
-    Main(Main<'a>),
+    Main(Box<Main<'a>>),
 }
 
 impl Default for Screen<'_> {
@@ -149,7 +161,7 @@ impl<'a> StatefulWidgetRef for App<'a> {
 
                 let [sidepanel, note] = Layout::horizontal([left, right]).areas(content);
 
-                SidePanel::default().render_ref(sidepanel, buf, &mut state.sidepanel_state);
+                Explorer::default().render(sidepanel, buf, &mut state.explorer_state);
 
                 MarkdownView.render_ref(note, buf, &mut state.markdown_view_state);
 
@@ -201,7 +213,7 @@ impl From<&Note> for SelectedNote {
         Self {
             name: value.name.clone(),
             path: value.path.to_string_lossy().to_string(),
-            content: Note::read_to_string(value).unwrap(),
+            content: Note::read_to_string(value).unwrap_or_default(),
         }
     }
 }
@@ -289,15 +301,13 @@ impl<'a> App<'a> {
             Action::Select => {
                 // TODO: Add logic to not load the vault again if the same vault was picked in the
                 // selector.
-                let alphabetically =
-                    |a: &Note, b: &Note| a.name.to_lowercase().cmp(&b.name.to_lowercase());
 
                 let vault_selector_state = inner.vault_selector_state.select();
 
                 let vault_with_notes = vault_selector_state
                     .selected()
                     .and_then(|index| inner.vault_selector_state.get_item(index))
-                    .map(|vault| (vault, vault.notes_sorted_by(alphabetically)));
+                    .map(|vault| (vault, vault.entries()));
 
                 if let Some((vault, notes)) = vault_with_notes {
                     AppState {
@@ -306,7 +316,7 @@ impl<'a> App<'a> {
                             notes,
                             state.size,
                             vault_selector_state.items(),
-                        )),
+                        ).into()),
                         vault_selector_modal: None,
                         ..state
                     }
@@ -340,9 +350,9 @@ impl<'a> App<'a> {
             Action::ToggleMode => AppState {
                 screen: Screen::Main(Main {
                     mode: Mode::Normal,
-                    sidepanel_state: inner.sidepanel_state.close(),
+                    explorer_state: inner.explorer_state.close(),
                     ..inner
-                }),
+                }.into()),
                 ..state
             },
             Action::ScrollUp(amount) => AppState {
@@ -351,7 +361,7 @@ impl<'a> App<'a> {
                         .markdown_view_state
                         .scroll_up(calc_scroll_amount(amount, state.size)),
                     ..inner
-                }),
+                }.into()),
                 ..state
             },
             Action::ScrollDown(amount) => AppState {
@@ -360,42 +370,50 @@ impl<'a> App<'a> {
                         .markdown_view_state
                         .scroll_down(calc_scroll_amount(amount, state.size)),
                     ..inner
-                }),
+                }.into()),
                 ..state
             },
             Action::Select => {
-                let sidepanel_state = inner.sidepanel_state.select();
+                let sidepanel_state = inner.explorer_state.select();
 
-                let selected_note = inner
-                    .notes
-                    .get(sidepanel_state.selected().unwrap_or_default())
+                let selected_note = sidepanel_state
+                    .selected_path()
+                    .and_then(|path| inner.notes.find_note(&path))
                     .map(SelectedNote::from);
 
                 AppState {
                     screen: Screen::Main(Main {
-                        sidepanel_state,
+                        explorer_state: sidepanel_state,
                         selected_note: selected_note.clone(),
                         markdown_view_state: inner
                             .markdown_view_state
                             .set_text(selected_note.map(|note| note.content).unwrap_or_default())
                             .reset_scrollbar(),
                         ..inner
-                    }),
+                    }.into()),
                     ..state
                 }
             }
+            Action::ToggleSort => AppState {
+                screen: Screen::Main(Main {
+                    explorer_state: inner.explorer_state.toggle_sort(),
+                    ..inner
+                }.into()),
+                ..state
+            },
+
             Action::Next => AppState {
                 screen: Screen::Main(Main {
-                    sidepanel_state: inner.sidepanel_state.next(),
+                    explorer_state: inner.explorer_state.next(),
                     ..inner
-                }),
+                }.into()),
                 ..state
             },
             Action::Prev => AppState {
                 screen: Screen::Main(Main {
-                    sidepanel_state: inner.sidepanel_state.previous(),
+                    explorer_state: inner.explorer_state.previous(),
                     ..inner
-                }),
+                }.into()),
                 ..state
             },
             _ => state,
@@ -412,9 +430,9 @@ impl<'a> App<'a> {
             Action::ToggleMode => AppState {
                 screen: Screen::Main(Main {
                     mode: Mode::Select,
-                    sidepanel_state: inner.sidepanel_state.open(),
+                    explorer_state: inner.explorer_state.open(),
                     ..inner
-                }),
+                }.into()),
                 ..state
             },
             Action::ScrollUp(amount) => AppState {
@@ -423,7 +441,7 @@ impl<'a> App<'a> {
                         .markdown_view_state
                         .scroll_up(calc_scroll_amount(amount, state.size)),
                     ..inner
-                }),
+                }.into()),
                 ..state
             },
             Action::ScrollDown(amount) => AppState {
@@ -432,21 +450,21 @@ impl<'a> App<'a> {
                         .markdown_view_state
                         .scroll_down(calc_scroll_amount(amount, state.size)),
                     ..inner
-                }),
+                }.into()),
                 ..state
             },
             Action::Next => AppState {
                 screen: Screen::Main(Main {
                     markdown_view_state: inner.markdown_view_state.scroll_down(1),
                     ..inner
-                }),
+                }.into()),
                 ..state
             },
             Action::Prev => AppState {
                 screen: Screen::Main(Main {
                     markdown_view_state: inner.markdown_view_state.scroll_up(1),
                     ..inner
-                }),
+                }.into()),
                 ..state
             },
             _ => state,
@@ -485,15 +503,12 @@ impl<'a> App<'a> {
     ) -> AppState<'a> {
         match action {
             Action::Select => {
-                let alphabetically =
-                    |a: &Note, b: &Note| a.name.to_lowercase().cmp(&b.name.to_lowercase());
-
                 let splash_state = inner.start_state.select();
 
                 let vault_with_notes = splash_state
                     .selected()
                     .and_then(|index| splash_state.get_item(index))
-                    .map(|vault| (vault, vault.notes_sorted_by(alphabetically)));
+                    .map(|vault| (vault, vault.entries()));
 
                 if let Some((vault, notes)) = vault_with_notes {
                     AppState {
@@ -502,7 +517,7 @@ impl<'a> App<'a> {
                             notes,
                             state.size,
                             inner.start_state.items(),
-                        )),
+                        ).into()),
                         ..state
                     }
                 } else {
@@ -557,7 +572,7 @@ impl<'a> App<'a> {
             ),
             _ => match screen {
                 Screen::Start(inner) => self.update_start_state(state, inner, action),
-                Screen::Main(inner) => self.update_main_state(state, inner, action),
+                Screen::Main(inner) => self.update_main_state(state, inner.into(), action),
             },
         }
     }
@@ -577,6 +592,7 @@ impl<'a> App<'a> {
             KeyCode::Char('q') => Some(Action::Quit),
             KeyCode::Char('?') => Some(Action::ToggleHelp),
             KeyCode::Char(' ') => Some(Action::ToggleVaultSelector),
+            KeyCode::Char('s') => Some(Action::ToggleSort),
             KeyCode::Up => Some(Action::ScrollUp(ScrollAmount::One)),
             KeyCode::Down => Some(Action::ScrollDown(ScrollAmount::One)),
             KeyCode::Char('u') if key_event.modifiers.contains(KeyModifiers::CONTROL) => {

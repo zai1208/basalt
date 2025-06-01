@@ -16,12 +16,38 @@ Type "j"
 Sleep 4s
 Enter
 Sleep 2s
-Type "j"
-Sleep 1s
+Enter
+Sleep 3s
 Type "j"
 Sleep 1.5s
 Enter
+Sleep 1.5s
+Type "j"
+Sleep 1.5s
+Enter
+Sleep 1.5s
+Type "j"
 Sleep 2s
+Enter
+Sleep 2.5s
+Type "s"
+Sleep 2.5s
+Type "k"
+Sleep 1.5s
+Type "k"
+Sleep 1.5s
+Enter
+Sleep 2.5s
+Type "s"
+Sleep 2.5s
+Type "j"
+Sleep 1.5s
+Type "j"
+Sleep 1.5s
+Type "j"
+Sleep 1.5s
+Enter
+Sleep 2.5s
 Type "t"
 Sleep 3s
 Ctrl+D

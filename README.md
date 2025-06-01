@@ -22,7 +22,7 @@ Or use the precompiled binaries from the latest basalt release.
 
 This is something that has been brewing in my head for quite some time. There has been different incarnations over the years, however, nothing as substantial as this.
 
-I have been using Neovim and the official Obsidian app. However, I wanted to have something dedicated that offers the same writing experience as Neovim, but has more WYSIWYG experience as in the official Obsidian app. I'm fully aware of (obsidian.nvim)[https://github.com/epwalsh/obsidian.nvim], which many people use and find more than sufficient. However, I want to see images, beautified text, note graphs, etc. I want it to be a bit more.
+I have been using Neovim and the official Obsidian app. However, I wanted to have something dedicated that offers the same writing experience as Neovim, but has more WYSIWYG experience as in the official Obsidian app. I'm fully aware of [obsidian.nvim](https://github.com/epwalsh/obsidian.nvim), which many people use and find more than sufficient. However, I want to see images, beautified text, note graphs, etc. I want it to be a bit more.
 
 The problem for me personally is that when I leave the terminal, my flow breaks, especially if I'm writing. Using an entirely different app disrupts that flow, and it _annoys_ me. So here I am, building a TUI for Obsidian.
 
@@ -70,16 +70,16 @@ For now these are not configurable, but this will change when the configuration 
 - [ ] Add `mdbook` and `gh` pages
 - [ ] Persistent scroll state in help modal
 - [ ] Fuzzy search in panes (note, side panel, modals)
-- [-] Markdown rendering
-    - [ ] Add support to all markdown nodes
+- [ ] Markdown rendering
     - [x] Add text formatting to different styles like `Fraktur` and `DoubleStruck` for heading purposes
     - [x] Improve and fix code block rendering, so it appears as a 'block'
+    - [ ] Add support to all markdown nodes
     - [ ] Support complete Obsidian Flavor
     - [ ] Add image rendering support
 - [ ] Note tree
+    - [x] Notes within Folders in vault
+    - [x] Collapsible folders
     - [ ] Create new note under vault
-    - [ ] Collapsible folders
-    - [ ] Notes within Folders in vault
     - [ ] Move note
     - [ ] Rename note
     - [ ] Delete note under vault (with confirmation modal)
