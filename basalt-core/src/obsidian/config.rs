@@ -17,7 +17,7 @@ pub struct ObsidianConfig {
 impl ObsidianConfig {
     /// Attempts to locate and load the system's `obsidian.json` file as an [`ObsidianConfig`].
     ///
-    /// Returns an [`Error`] if the filepath doesn't exist or JSON parsing failed.
+    /// Returns an [`Error`] if the file path doesn't exist or JSON parsing failed.
     pub fn load() -> Result<Self> {
         let config_locations = obsidian_global_config_locations();
         let existing_config_locations = config_locations
@@ -42,7 +42,7 @@ impl ObsidianConfig {
     /// Attempts to load `obsidian.json` file as an [`ObsidianConfig`] from the given directory
     /// [`Path`].
     ///
-    /// Returns an [`Error`] if the filepath doesn't exist or JSON parsing failed.
+    /// Returns an [`Error`] if the file path doesn't exist or JSON parsing failed.
     ///
     /// # Examples
     ///
@@ -227,11 +227,11 @@ impl<'de> Deserialize<'de> for ObsidianConfig {
 /// typically `~/snap/obsidian/common/.config/obsidian`.
 ///
 /// For reference:
-/// - macOS:  `/Users/username/Library/Application Support/obsidian`
-/// - Windows: `%APPDATA%\Obsidian\`
-/// - Linux:   `$XDG_CONFIG_HOME/obsidian` or `~/.config/obsidian`
-///   flatpak: `$HOME/.var/app/md.obsidian.Obsidian/config/obsidian`
-///   snap: `$HOME/snap/obsidian/common/.config/obsidian`
+/// - macOS:     `/Users/username/Library/Application Support/obsidian`
+/// - Windows:   `%APPDATA%\Obsidian\`
+/// - Linux:     `$XDG_CONFIG_HOME/obsidian` or `~/.config/obsidian`
+///   - flatpak: `$HOME/.var/app/md.obsidian.Obsidian/config/obsidian`
+///   - snap:    `$HOME/snap/obsidian/common/.config/obsidian`
 ///
 /// More info: [https://help.obsidian.md/Files+and+folders/How+Obsidian+stores+data]
 pub fn obsidian_global_config_locations() -> Vec<PathBuf> {
