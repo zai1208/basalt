@@ -104,10 +104,16 @@ impl<'a> Main<'a> {
     }
 }
 
+impl<'a> From<Box<Main<'a>>> for Main<'a> {
+    fn from(value: Box<Main<'a>>) -> Self {
+         *value
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Screen<'a> {
     Start(Start<'a>),
-    Main(Main<'a>),
+    Main(Box<Main<'a>>),
 }
 
 impl Default for Screen<'_> {
@@ -310,7 +316,7 @@ impl<'a> App<'a> {
                             notes,
                             state.size,
                             vault_selector_state.items(),
-                        )),
+                        ).into()),
                         vault_selector_modal: None,
                         ..state
                     }
@@ -346,7 +352,7 @@ impl<'a> App<'a> {
                     mode: Mode::Normal,
                     explorer_state: inner.explorer_state.close(),
                     ..inner
-                }),
+                }.into()),
                 ..state
             },
             Action::ScrollUp(amount) => AppState {
@@ -355,7 +361,7 @@ impl<'a> App<'a> {
                         .markdown_view_state
                         .scroll_up(calc_scroll_amount(amount, state.size)),
                     ..inner
-                }),
+                }.into()),
                 ..state
             },
             Action::ScrollDown(amount) => AppState {
@@ -364,7 +370,7 @@ impl<'a> App<'a> {
                         .markdown_view_state
                         .scroll_down(calc_scroll_amount(amount, state.size)),
                     ..inner
-                }),
+                }.into()),
                 ..state
             },
             Action::Select => {
@@ -384,7 +390,7 @@ impl<'a> App<'a> {
                             .set_text(selected_note.map(|note| note.content).unwrap_or_default())
                             .reset_scrollbar(),
                         ..inner
-                    }),
+                    }.into()),
                     ..state
                 }
             }
@@ -392,7 +398,7 @@ impl<'a> App<'a> {
                 screen: Screen::Main(Main {
                     explorer_state: inner.explorer_state.toggle_sort(),
                     ..inner
-                }),
+                }.into()),
                 ..state
             },
 
@@ -400,14 +406,14 @@ impl<'a> App<'a> {
                 screen: Screen::Main(Main {
                     explorer_state: inner.explorer_state.next(),
                     ..inner
-                }),
+                }.into()),
                 ..state
             },
             Action::Prev => AppState {
                 screen: Screen::Main(Main {
                     explorer_state: inner.explorer_state.previous(),
                     ..inner
-                }),
+                }.into()),
                 ..state
             },
             _ => state,
@@ -426,7 +432,7 @@ impl<'a> App<'a> {
                     mode: Mode::Select,
                     explorer_state: inner.explorer_state.open(),
                     ..inner
-                }),
+                }.into()),
                 ..state
             },
             Action::ScrollUp(amount) => AppState {
@@ -435,7 +441,7 @@ impl<'a> App<'a> {
                         .markdown_view_state
                         .scroll_up(calc_scroll_amount(amount, state.size)),
                     ..inner
-                }),
+                }.into()),
                 ..state
             },
             Action::ScrollDown(amount) => AppState {
@@ -444,21 +450,21 @@ impl<'a> App<'a> {
                         .markdown_view_state
                         .scroll_down(calc_scroll_amount(amount, state.size)),
                     ..inner
-                }),
+                }.into()),
                 ..state
             },
             Action::Next => AppState {
                 screen: Screen::Main(Main {
                     markdown_view_state: inner.markdown_view_state.scroll_down(1),
                     ..inner
-                }),
+                }.into()),
                 ..state
             },
             Action::Prev => AppState {
                 screen: Screen::Main(Main {
                     markdown_view_state: inner.markdown_view_state.scroll_up(1),
                     ..inner
-                }),
+                }.into()),
                 ..state
             },
             _ => state,
@@ -511,7 +517,7 @@ impl<'a> App<'a> {
                             notes,
                             state.size,
                             inner.start_state.items(),
-                        )),
+                        ).into()),
                         ..state
                     }
                 } else {
@@ -566,7 +572,7 @@ impl<'a> App<'a> {
             ),
             _ => match screen {
                 Screen::Start(inner) => self.update_start_state(state, inner, action),
-                Screen::Main(inner) => self.update_main_state(state, inner, action),
+                Screen::Main(inner) => self.update_main_state(state, inner.into(), action),
             },
         }
     }
