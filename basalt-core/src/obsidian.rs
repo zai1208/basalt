@@ -15,15 +15,18 @@
 //!
 //! _ = config.get_vault_by_name("Obsidian");
 //! ```
-use std::{io, result};
+use std::{io, path::PathBuf, result};
 
 mod config;
 mod note;
 mod vault;
+mod vault_entry;
 
 pub use config::ObsidianConfig;
 pub use note::Note;
 pub use vault::Vault;
+pub use vault_entry::FindNote;
+pub use vault_entry::VaultEntry;
 
 /// A [`std::result::Result`] type for fallible operations in [`crate::obsidian`].
 ///
@@ -50,6 +53,10 @@ pub enum Error {
     /// Expected resource behind a path was not found.
     #[error("Path not found: {0}")]
     PathNotFound(String),
+
+    /// Filename was empty
+    #[error("Empty filename for path: {0}")]
+    EmptyFileName(PathBuf),
 
     /// JSON (de)serialization error, from [`serde_json::Error`].
     #[error("JSON (de)serialization error: {0}")]
