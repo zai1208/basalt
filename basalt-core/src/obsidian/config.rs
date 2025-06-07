@@ -231,7 +231,7 @@ impl<'de> Deserialize<'de> for ObsidianConfig {
 /// - Windows:   `%APPDATA%\Obsidian\`
 /// - Linux:     `$XDG_CONFIG_HOME/obsidian` or `~/.config/obsidian`
 ///   - flatpak: `$HOME/.var/app/md.obsidian.Obsidian/config/obsidian`
-///   - snap:    `$HOME/snap/obsidian/common/.config/obsidian`
+///   - snap:    `$HOME/snap/obsidian/current/.config/obsidian`
 ///
 /// More info: [https://help.obsidian.md/Files+and+folders/How+Obsidian+stores+data]
 pub fn obsidian_global_config_locations() -> Vec<PathBuf> {
@@ -267,7 +267,7 @@ pub fn obsidian_global_config_locations() -> Vec<PathBuf> {
 
         let snap_path = home_dir().map(|home_dir| {
             home_dir
-                .join("snap/obsidian/common/.config")
+                .join("snap/obsidian/current/.config")
                 .join(OBSIDIAN_CONFIG_DIR_NAME)
         });
 
