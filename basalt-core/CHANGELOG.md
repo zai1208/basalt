@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.1 (2025-06-05)
+
+### obsidian
+
+#### Fixed
+
+- [Use snap folder `/current` instead of `/common`](https://github.com/erikjuhani/basalt/commit/ac0ee653250e0ca052063506f10d61a9ce2f7735)
+
 ## 0.6.0 (2025-06-01)
 
 ### obsidian
