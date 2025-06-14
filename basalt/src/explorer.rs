@@ -71,7 +71,11 @@ impl<'a> StatefulWidget for Explorer<'a> {
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let block = Block::bordered()
-            .border_type(BorderType::Rounded)
+            .border_type(if state.active {
+                BorderType::Thick
+            } else {
+                BorderType::Rounded
+            })
             .title_style(Style::default().italic().bold());
 
         let Rect { height, .. } = block.inner(area);
@@ -177,7 +181,7 @@ mod tests {
                     Explorer::default().render(
                         frame.area(),
                         frame.buffer_mut(),
-                        &mut ExplorerState::new("Test", items).select().toggle_sort(),
+                        &mut ExplorerState::new("Test", items).select().sort(),
                     )
                 })
                 .unwrap();

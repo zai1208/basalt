@@ -3,7 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use basalt_core::obsidian::VaultEntry;
+use basalt_core::obsidian::{Note, VaultEntry};
 use ratatui::widgets::ListState;
 
 use super::Item;
@@ -18,6 +18,7 @@ pub enum Sort {
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct ExplorerState<'a> {
     pub(crate) title: &'a str,
+    pub(crate) selected_note: Option<Note>,
     pub(crate) selected_item_index: Option<usize>,
     pub(crate) selected_item_path: Option<PathBuf>,
     pub(crate) items: Vec<Item>,
@@ -25,6 +26,7 @@ pub struct ExplorerState<'a> {
     pub(crate) open: bool,
     pub(crate) sort: Sort,
     pub(crate) list_state: ListState,
+    pub(crate) active: bool,
 }
 
 /// Calculates the vertical offset of list items in rows.
@@ -113,10 +115,22 @@ impl<'a> ExplorerState<'a> {
             open: true,
             selected_item_index: None,
             selected_item_path: None,
+            selected_note: None,
             list_state: ListState::default().with_selected(Some(0)),
             ..Default::default()
         }
         .flatten_with_items(&items)
+    }
+
+    pub fn set_active(&self, active: bool) -> Self {
+        Self {
+            active,
+            ..self.clone()
+        }
+    }
+
+    pub fn toggle(&self) -> Self {
+        Self { open: !self.open, ..self.clone() }
     }
 
     pub fn open(self) -> Self {
@@ -153,7 +167,7 @@ impl<'a> ExplorerState<'a> {
         }
     }
 
-    pub fn toggle_sort(&self) -> Self {
+    pub fn sort(&self) -> Self {
         let sort = match self.sort {
             Sort::Asc => Sort::Desc,
             Sort::Desc => Sort::Asc,
@@ -227,6 +241,7 @@ impl<'a> ExplorerState<'a> {
                 self.flatten_with_items(&items)
             }
             (Item::File(note), _) => Self {
+                selected_note: Some(note.clone()),
                 selected_item_index: Some(selected_item_index),
                 selected_item_path: Some(note.path.clone()),
                 ..self.clone()
@@ -242,11 +257,11 @@ impl<'a> ExplorerState<'a> {
         self.open
     }
 
-    pub fn next(mut self) -> Self {
+    pub fn next(mut self, amount: usize) -> Self {
         let index = self
             .list_state
             .selected()
-            .map(|i| (i + 1).min(self.flat_items.len().saturating_sub(1)));
+            .map(|i| (i + amount).min(self.flat_items.len().saturating_sub(1)));
 
         self.list_state.select(index);
 
@@ -256,8 +271,10 @@ impl<'a> ExplorerState<'a> {
         }
     }
 
-    pub fn previous(mut self) -> Self {
-        self.list_state.select_previous();
+    pub fn previous(mut self, amount: usize) -> Self {
+        let index = self.list_state.selected().map(|i| i.saturating_sub(amount));
+
+        self.list_state.select(index);
 
         Self {
             list_state: self.list_state,

@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use basalt_core::obsidian::Vault;
 use ratatui::{
     buffer::Buffer,
-    layout::{Constraint, Flex, Layout, Rect, Size},
+    layout::{Constraint, Flex, Layout, Rect},
     style::Stylize,
     text::Text,
     widgets::{StatefulWidgetRef, Widget},
@@ -42,19 +42,17 @@ pub const LOGO: [&str; 25] = [
 ];
 
 #[derive(Debug, Default, Clone, PartialEq)]
-pub struct StartState<'a> {
+pub struct SplashState<'a> {
     pub(crate) vault_selector_state: VaultSelectorState<'a>,
-    pub(crate) size: Size,
     pub(crate) version: &'a str,
 }
 
-impl<'a> StartState<'a> {
-    pub fn new(version: &'a str, size: Size, items: Vec<&'a Vault>) -> Self {
+impl<'a> SplashState<'a> {
+    pub fn new(version: &'a str, items: Vec<&'a Vault>) -> Self {
         let vault_selector_state = VaultSelectorState::new(items);
 
-        StartState {
+        SplashState {
             version,
-            size,
             vault_selector_state,
         }
     }
@@ -94,12 +92,12 @@ impl<'a> StartState<'a> {
 }
 
 #[derive(Default)]
-pub struct StartScreen<'a> {
+pub struct Splash<'a> {
     _lifetime: PhantomData<&'a ()>,
 }
 
-impl<'a> StatefulWidgetRef for StartScreen<'a> {
-    type State = StartState<'a>;
+impl<'a> StatefulWidgetRef for Splash<'a> {
+    type State = SplashState<'a>;
 
     fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let [_, center, _] = Layout::horizontal([

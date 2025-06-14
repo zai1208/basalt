@@ -1,9 +1,7 @@
-use basalt_tui as basalt;
-
 use std::io;
 
-use basalt::app::App;
 use basalt_core::obsidian::ObsidianConfig;
+use basalt_tui::app::App;
 
 fn main() -> io::Result<()> {
     let terminal = ratatui::init();
@@ -11,6 +9,7 @@ fn main() -> io::Result<()> {
     let vaults = obsidian_config.vaults();
 
     App::start(terminal, vaults)?;
+
     ratatui::restore();
 
     Ok(())

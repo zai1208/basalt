@@ -2,7 +2,7 @@ pub mod app;
 pub mod explorer;
 pub mod help_modal;
 pub mod markdown;
-pub mod start;
+pub mod splash;
 pub mod statusbar;
 pub mod stylized_text;
 pub mod text_counts;
