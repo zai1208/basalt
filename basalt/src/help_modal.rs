@@ -13,8 +13,8 @@ use ratatui::{
 pub struct HelpModalState {
     pub scrollbar_state: ScrollbarState,
     pub scrollbar_position: usize,
-    pub viewport_height: usize,
     pub text: String,
+    pub visible: bool,
 }
 
 impl HelpModalState {
@@ -26,18 +26,32 @@ impl HelpModalState {
         }
     }
 
-    pub fn scroll_up(self, amount: usize) -> Self {
+    pub fn toggle_visibility(&self) -> Self {
+        Self {
+            visible: !self.visible,
+            ..self.clone()
+        }
+    }
+
+    pub fn hide(&self) -> Self {
+        Self {
+            visible: false,
+            ..self.clone()
+        }
+    }
+
+    pub fn scroll_up(&self, amount: usize) -> Self {
         let scrollbar_position = self.scrollbar_position.saturating_sub(amount);
         let scrollbar_state = self.scrollbar_state.position(scrollbar_position);
 
         Self {
             scrollbar_state,
             scrollbar_position,
-            ..self
+            ..self.clone()
         }
     }
 
-    pub fn scroll_down(self, amount: usize) -> Self {
+    pub fn scroll_down(&self, amount: usize) -> Self {
         let scrollbar_position = self
             .scrollbar_position
             .saturating_add(amount)
@@ -48,7 +62,7 @@ impl HelpModalState {
         Self {
             scrollbar_state,
             scrollbar_position,
-            ..self
+            ..self.clone()
         }
     }
 
