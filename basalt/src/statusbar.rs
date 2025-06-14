@@ -10,17 +10,15 @@ use ratatui::{
 
 #[derive(Default, Clone, PartialEq)]
 pub struct StatusBarState<'a> {
-    mode: &'a str,
-    meta: Option<&'a str>,
+    active_component_name: &'a str,
     word_count: usize,
     char_count: usize,
 }
 
 impl<'a> StatusBarState<'a> {
-    pub fn new(mode: &'a str, meta: Option<&'a str>, word_count: usize, char_count: usize) -> Self {
+    pub fn new(active_component_name: &'a str, word_count: usize, char_count: usize) -> Self {
         Self {
-            mode,
-            meta,
+            active_component_name,
             word_count,
             char_count,
         }
@@ -40,49 +38,39 @@ impl<'a> StatefulWidgetRef for StatusBar<'a> {
             .flex(Flex::SpaceBetween)
             .areas(area);
 
-        let meta = state
-            .meta
-            .map(|meta| {
-                [
-                    Span::from(" ").bg(Color::DarkGray),
-                    Span::from(meta).bg(Color::DarkGray).gray().bold(),
-                    Span::from(" ").bg(Color::DarkGray),
-                    Span::from("").dark_gray(),
-                ]
-            })
-            .unwrap_or_default();
+        let active_component = [
+            Span::from("").dark_gray(),
+            Span::from(" ").bg(Color::DarkGray),
+            Span::from(state.active_component_name)
+                .bg(Color::DarkGray)
+                .black()
+                .bold(),
+            Span::from(" ").bg(Color::DarkGray),
+            Span::from("").dark_gray(),
+        ]
+        .to_vec();
 
-        Text::from(Line::from(
-            [
-                Span::from("").magenta(),
-                Span::from(" ").bg(Color::Magenta),
-                Span::from(state.mode).magenta().reversed().bold(),
-                Span::from(" ").bg(Color::Magenta),
-                Span::from("")
-                    .bg(if state.meta.is_some() {
-                        Color::DarkGray
-                    } else {
-                        Color::default()
-                    })
-                    .magenta(),
-            ]
-            .into_iter()
-            .chain(meta)
-            .collect::<Vec<Span>>(),
-        ))
-        .render(left, buf);
+        Text::from(Line::from(active_component)).render(left, buf);
 
         let [word_count, char_count] =
             Layout::horizontal([Constraint::Fill(1), Constraint::Fill(1)])
                 .flex(Flex::End)
                 .areas(right);
 
-        Text::from(format!("{} word{}", state.word_count, if state.word_count == 1 { "" } else { "s" }))
-            .right_aligned()
-            .render(word_count, buf);
+        Text::from(format!(
+            "{} word{}",
+            state.word_count,
+            if state.word_count == 1 { "" } else { "s" }
+        ))
+        .right_aligned()
+        .render(word_count, buf);
 
-        Text::from(format!("{} char{}", state.char_count, if state.char_count == 1 { "" } else { "s" }))
-            .right_aligned()
-            .render(char_count, buf);
+        Text::from(format!(
+            "{} char{}",
+            state.char_count,
+            if state.char_count == 1 { "" } else { "s" }
+        ))
+        .right_aligned()
+        .render(char_count, buf);
     }
 }

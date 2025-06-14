@@ -1,19 +1,19 @@
-use super::markdown::{MarkdownView, MarkdownViewState};
-use basalt_core::obsidian::{FindNote, Note, Vault, VaultEntry};
+use basalt_core::obsidian::{Note, Vault, VaultEntry};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{
     buffer::Buffer,
-    layout::{Constraint, Layout, Rect, Size},
+    layout::{Constraint, Flex, Layout, Rect, Size},
     widgets::{StatefulWidget, StatefulWidgetRef},
     DefaultTerminal,
 };
 
-use std::{cell::RefCell, io::Result, marker::PhantomData};
+use std::{cell::RefCell, fmt::Debug, io::Result};
 
 use crate::{
     explorer::{Explorer, ExplorerState},
     help_modal::{HelpModal, HelpModalState},
-    start::{StartScreen, StartState},
+    markdown::{MarkdownView, MarkdownViewState},
+    splash::{Splash, SplashState},
     statusbar::{StatusBar, StatusBarState},
     text_counts::{CharCount, WordCount},
     vault_selector_modal::{VaultSelectorModal, VaultSelectorModalState},
@@ -23,24 +23,6 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const HELP_TEXT: &str = include_str!("./help.txt");
 
-#[derive(Debug, Clone, Default, PartialEq)]
-pub enum Mode {
-    #[default]
-    Select,
-    Normal,
-    Insert,
-}
-
-impl Mode {
-    fn as_str(&self) -> &'static str {
-        match self {
-            Mode::Select => "Select",
-            Mode::Normal => "Normal",
-            Mode::Insert => "Insert",
-        }
-    }
-}
-
 #[derive(Debug, Default, Clone, PartialEq)]
 pub enum ScrollAmount {
     #[default]
@@ -48,155 +30,340 @@ pub enum ScrollAmount {
     HalfPage,
 }
 
-fn calc_scroll_amount(scroll_amount: ScrollAmount, size: Size) -> usize {
+fn calc_scroll_amount(scroll_amount: ScrollAmount, height: usize) -> usize {
     match scroll_amount {
         ScrollAmount::One => 1,
-        ScrollAmount::HalfPage => (size.height / 3).into(),
+        ScrollAmount::HalfPage => height / 2,
     }
 }
 
-#[derive(Debug, PartialEq)]
-pub enum Action {
-    Select,
-    ToggleSort,
-    Next,
-    Prev,
-    Insert,
-    Resize(Size),
-    ScrollUp(ScrollAmount),
-    ScrollDown(ScrollAmount),
-    ToggleMode,
-    ToggleHelp,
-    ToggleVaultSelector,
-    Quit,
+#[derive(Default, Clone)]
+struct MainState<'a> {
+    active_pane: ActivePane,
+    explorer: ExplorerState<'a>,
+    note_viewer: MarkdownViewState,
+    selected_note: Option<SelectedNote>,
 }
 
-#[derive(Debug, Default, Clone, PartialEq)]
-pub struct Start<'a> {
-    pub start_state: StartState<'a>,
-}
-
-#[derive(Debug, Default, Clone, PartialEq)]
-pub struct Main<'a> {
-    pub explorer_state: ExplorerState<'a>,
-    pub selected_note: Option<SelectedNote>,
-    pub markdown_view_state: MarkdownViewState,
-    pub notes: Vec<VaultEntry>,
-    pub vaults: Vec<&'a Vault>,
-    pub size: Size,
-    pub mode: Mode,
-}
-
-impl<'a> Main<'a> {
-    fn new(
-        vault_name: &'a str,
-        notes: Vec<VaultEntry>,
-        size: Size,
-        vaults: Vec<&'a Vault>,
-    ) -> Self {
+impl<'a> MainState<'a> {
+    fn new(selected_vault_name: &'a str, notes: Vec<VaultEntry>) -> Self {
         Self {
-            notes: notes.clone(),
-            explorer_state: ExplorerState::new(vault_name, notes),
-            vaults,
-            size,
+            active_pane: ActivePane::Explorer,
+            explorer: ExplorerState::new(selected_vault_name, notes).set_active(true),
             ..Default::default()
         }
     }
 }
 
-impl<'a> From<Box<Main<'a>>> for Main<'a> {
-    fn from(value: Box<Main<'a>>) -> Self {
-         *value
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Screen<'a> {
-    Start(Start<'a>),
-    Main(Box<Main<'a>>),
-}
-
-impl Default for Screen<'_> {
-    fn default() -> Self {
-        Screen::Start(Start::default())
-    }
-}
-
-#[derive(Debug, Default, Clone, PartialEq)]
+#[derive(Default, Clone)]
 pub struct AppState<'a> {
-    pub help_modal: Option<HelpModalState>,
-    pub vault_selector_modal: Option<VaultSelectorModalState<'a>>,
-    pub size: Size,
-    pub is_running: bool,
-    pub screen: Screen<'a>,
-    _lifetime: PhantomData<&'a ()>,
+    screen: ScreenState<'a>,
+    screen_size: Size,
+    is_running: bool,
+
+    help_modal: HelpModalState,
+    vault_selector_modal: VaultSelectorModalState<'a>,
 }
 
-pub struct App<'a> {
-    pub state: AppState<'a>,
-    terminal: RefCell<DefaultTerminal>,
+fn modal_area_height(size: Size) -> usize {
+    let vertical = Layout::vertical([Constraint::Percentage(50)]).flex(Flex::Center);
+    let [area] = vertical.areas(Rect::new(0, 0, size.width, size.height.saturating_sub(3)));
+    area.height.into()
 }
 
-impl<'a> StatefulWidgetRef for App<'a> {
-    type State = AppState<'a>;
+#[derive(Clone)]
+enum ScreenState<'a> {
+    Splash(SplashState<'a>),
+    Main(Box<MainState<'a>>),
+}
 
-    fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        let screen = state.screen.clone();
+impl<'a> AppState<'a> {
+    pub fn active_component(&self) -> ActivePane {
+        if self.help_modal.visible {
+            return ActivePane::HelpModal;
+        }
 
-        match screen {
-            Screen::Start(mut state) => {
-                StartScreen::default().render_ref(area, buf, &mut state.start_state)
+        if self.vault_selector_modal.visible {
+            return ActivePane::VaultSelectorModal;
+        }
+
+        match &self.screen {
+            ScreenState::Splash(..) => ActivePane::Splash,
+            ScreenState::Main(state) => state.active_pane,
+        }
+    }
+
+    pub fn set_running(&self, is_running: bool) -> Self {
+        Self {
+            is_running,
+            ..self.clone()
+        }
+    }
+
+    fn with_vault_selector_modal_state(
+        &self,
+        vault_selector_modal: VaultSelectorModalState<'a>,
+    ) -> Self {
+        Self {
+            vault_selector_modal,
+            ..self.clone()
+        }
+    }
+
+    fn with_help_modal_state(&self, help_modal: HelpModalState) -> Self {
+        Self {
+            help_modal,
+            ..self.clone()
+        }
+    }
+
+    fn with_main_state(&self, main_state: MainState<'a>) -> Self {
+        Self {
+            screen: ScreenState::Main(Box::new(main_state)),
+            ..self.clone()
+        }
+    }
+
+    fn with_splash_state(&self, splash_state: SplashState<'a>) -> Self {
+        Self {
+            screen: ScreenState::Splash(splash_state),
+            ..self.clone()
+        }
+    }
+}
+
+impl Default for ScreenState<'_> {
+    fn default() -> Self {
+        Self::Splash(SplashState::default())
+    }
+}
+
+mod splash {
+    use crossterm::event::{KeyCode, KeyEvent};
+
+    use crate::splash::SplashState;
+
+    #[derive(Clone)]
+    pub enum Message {
+        Up,
+        Down,
+        Open,
+    }
+
+    pub fn handle_event(key: &KeyEvent) -> Option<Message> {
+        match key.code {
+            KeyCode::Up | KeyCode::Char('k') => Some(Message::Up),
+            KeyCode::Down | KeyCode::Char('j') => Some(Message::Down),
+            KeyCode::Enter => Some(Message::Open),
+            _ => None,
+        }
+    }
+
+    pub fn update(message: Message, state: SplashState) -> SplashState {
+        match message {
+            Message::Up => state.previous(),
+            Message::Down => state.next(),
+            Message::Open => state.select(),
+        }
+    }
+}
+
+mod explorer {
+    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+
+    use crate::explorer::ExplorerState;
+
+    use super::ScrollAmount;
+
+    #[derive(Clone)]
+    pub enum Message {
+        Up,
+        Down,
+        Open,
+        Sort,
+        Toggle,
+        SwitchPane,
+        ScrollUp(ScrollAmount),
+        ScrollDown(ScrollAmount),
+    }
+
+    pub fn handle_event(key: &KeyEvent) -> Option<Message> {
+        match key.code {
+            KeyCode::Up | KeyCode::Char('k') => Some(Message::Up),
+            KeyCode::Down | KeyCode::Char('j') => Some(Message::Down),
+            KeyCode::Enter | KeyCode::Char(' ') => Some(Message::Open),
+            KeyCode::Tab => Some(Message::SwitchPane),
+            KeyCode::Char('t') => Some(Message::Toggle),
+            KeyCode::Char('s') => Some(Message::Sort),
+            KeyCode::Char('b') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                Some(Message::Sort)
             }
-            Screen::Main(mut state) => {
-                let [content, statusbar] =
-                    Layout::vertical([Constraint::Fill(1), Constraint::Length(1)])
-                        .horizontal_margin(1)
-                        .areas(area);
+            KeyCode::Char('u') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                Some(Message::ScrollUp(ScrollAmount::HalfPage))
+            }
+            KeyCode::Char('d') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                Some(Message::ScrollDown(ScrollAmount::HalfPage))
+            }
+            _ => None,
+        }
+    }
 
-                let (left, right) = if state.mode == Mode::Select {
-                    (Constraint::Length(35), Constraint::Fill(1))
+    pub fn update(message: Message, state: ExplorerState) -> ExplorerState {
+        match message {
+            Message::Up => state.previous(1),
+            Message::Down => state.next(1),
+            Message::Sort => state.sort(),
+            Message::Open => state.select(),
+            Message::Toggle => state.toggle(),
+            Message::SwitchPane => {
+                if state.active {
+                    state.set_active(false)
                 } else {
-                    (Constraint::Length(5), Constraint::Fill(1))
-                };
-
-                let [sidepanel, note] = Layout::horizontal([left, right]).areas(content);
-
-                Explorer::default().render(sidepanel, buf, &mut state.explorer_state);
-
-                MarkdownView.render_ref(note, buf, &mut state.markdown_view_state);
-
-                let mode = state.mode.as_str().to_uppercase();
-                let (name, counts) = state
-                    .selected_note
-                    .clone()
-                    .map(|note| {
-                        let content = note.content.as_str();
-                        (
-                            note.name,
-                            (WordCount::from(content), CharCount::from(content)),
-                        )
-                    })
-                    .unzip();
-
-                let (word_count, char_count) = counts.unwrap_or_default();
-
-                let mut status_bar_state = StatusBarState::new(
-                    &mode,
-                    name.as_deref(),
-                    word_count.into(),
-                    char_count.into(),
-                );
-
-                StatusBar::default().render_ref(statusbar, buf, &mut status_bar_state);
+                    state.set_active(true)
+                }
             }
+            _ => state,
         }
+    }
+}
 
-        if let Some(mut vault_selector_modal_state) = state.vault_selector_modal.clone() {
-            VaultSelectorModal::default().render(area, buf, &mut vault_selector_modal_state)
+mod note_viewer {
+    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+
+    use super::ScrollAmount;
+
+    #[derive(Clone)]
+    pub enum Message {
+        SwitchPane,
+        ToggleExplorer,
+        ScrollUp(ScrollAmount),
+        ScrollDown(ScrollAmount),
+    }
+
+    pub fn handle_event(key: &KeyEvent) -> Option<Message> {
+        match key.code {
+            KeyCode::Up | KeyCode::Char('k') => Some(Message::ScrollUp(ScrollAmount::One)),
+            KeyCode::Down | KeyCode::Char('j') => Some(Message::ScrollDown(ScrollAmount::One)),
+            KeyCode::Tab => Some(Message::SwitchPane),
+            KeyCode::Char('u') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                Some(Message::ScrollUp(ScrollAmount::HalfPage))
+            }
+            KeyCode::Char('d') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                Some(Message::ScrollDown(ScrollAmount::HalfPage))
+            }
+            KeyCode::Char('b') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                Some(Message::ToggleExplorer)
+            }
+            KeyCode::Char('t') => Some(Message::ToggleExplorer),
+            _ => None,
         }
+    }
+}
 
-        if let Some(mut help_modal_state) = state.help_modal.clone() {
-            HelpModal.render(area, buf, &mut help_modal_state)
+mod help_modal {
+    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+
+    use crate::help_modal::HelpModalState;
+
+    use super::ScrollAmount;
+
+    #[derive(Clone)]
+    pub enum Message {
+        Toggle,
+        Close,
+        ScrollUp(ScrollAmount),
+        ScrollDown(ScrollAmount),
+    }
+
+    pub fn handle_event(key: &KeyEvent) -> Option<Message> {
+        match key.code {
+            KeyCode::Esc => Some(Message::Close),
+            KeyCode::Up | KeyCode::Char('k') => Some(Message::ScrollUp(ScrollAmount::One)),
+            KeyCode::Down | KeyCode::Char('j') => Some(Message::ScrollDown(ScrollAmount::One)),
+            KeyCode::Char('u') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                Some(Message::ScrollUp(ScrollAmount::HalfPage))
+            }
+            KeyCode::Char('d') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                Some(Message::ScrollDown(ScrollAmount::HalfPage))
+            }
+            _ => None,
+        }
+    }
+
+    pub fn update(message: Message, state: HelpModalState) -> HelpModalState {
+        match message {
+            Message::Toggle => state.toggle_visibility(),
+            Message::Close => state.hide(),
+            _ => state,
+        }
+    }
+}
+
+mod vault_selector_modal {
+    use crossterm::event::{KeyCode, KeyEvent};
+
+    use crate::vault_selector_modal::VaultSelectorModalState;
+
+    #[derive(Clone)]
+    pub enum Message {
+        Toggle,
+        Up,
+        Down,
+        Select,
+        Close,
+    }
+
+    pub fn handle_event(key: &KeyEvent) -> Option<Message> {
+        match key.code {
+            KeyCode::Esc => Some(Message::Close),
+            KeyCode::Up | KeyCode::Char('k') => Some(Message::Up),
+            KeyCode::Down | KeyCode::Char('j') => Some(Message::Down),
+            KeyCode::Enter => Some(Message::Select),
+            _ => None,
+        }
+    }
+
+    pub fn update(message: Message, state: VaultSelectorModalState) -> VaultSelectorModalState {
+        match message {
+            Message::Up => state.previous(),
+            Message::Down => state.next(),
+            Message::Toggle => state.toggle_visibility(),
+            Message::Select => state.select(),
+            Message::Close => state.hide(),
+        }
+    }
+}
+
+#[derive(Clone)]
+pub enum Message {
+    Quit,
+    Resize(Size),
+
+    Splash(splash::Message),
+    Explorer(explorer::Message),
+    NoteViewer(note_viewer::Message),
+    HelpModal(help_modal::Message),
+    VaultSelectorModal(vault_selector_modal::Message),
+}
+
+#[derive(Debug, Default, Clone, Copy, PartialEq)]
+pub enum ActivePane {
+    #[default]
+    Splash,
+    Explorer,
+    NoteViewer,
+    HelpModal,
+    VaultSelectorModal,
+}
+
+impl From<ActivePane> for &str {
+    fn from(value: ActivePane) -> Self {
+        match value {
+            ActivePane::Splash => "Splash",
+            ActivePane::Explorer => "Explorer",
+            ActivePane::NoteViewer => "Note Viewer",
+            ActivePane::HelpModal => "Help",
+            ActivePane::VaultSelectorModal => "Vault Selector",
         }
     }
 }
@@ -208,12 +375,12 @@ pub struct SelectedNote {
     content: String,
 }
 
-impl From<&Note> for SelectedNote {
-    fn from(value: &Note) -> Self {
+impl From<Note> for SelectedNote {
+    fn from(value: Note) -> Self {
         Self {
             name: value.name.clone(),
             path: value.path.to_string_lossy().to_string(),
-            content: Note::read_to_string(value).unwrap_or_default(),
+            content: Note::read_to_string(&value).unwrap_or_default(),
         }
     }
 }
@@ -226,393 +393,48 @@ fn help_text() -> String {
     )
 }
 
+pub struct App<'a> {
+    state: AppState<'a>,
+    terminal: RefCell<DefaultTerminal>,
+}
+
 impl<'a> App<'a> {
+    pub fn new(state: AppState<'a>, terminal: DefaultTerminal) -> Self {
+        Self {
+            state,
+            terminal: RefCell::new(terminal),
+        }
+    }
+
     pub fn start(terminal: DefaultTerminal, vaults: Vec<&Vault>) -> Result<()> {
         let version = format!("{VERSION}~alpha");
         let size = terminal.size()?;
 
         let state = AppState {
-            screen: Screen::Start(Start {
-                start_state: StartState::new(&version, size, vaults),
-            }),
-            size,
-            is_running: true,
-            _lifetime: PhantomData,
+            screen_size: size,
+            help_modal: HelpModalState::new(&help_text()),
+            vault_selector_modal: VaultSelectorModalState::new(vaults.clone()),
             ..Default::default()
-        };
-
-        App {
-            state: state.clone(),
-            terminal: RefCell::new(terminal),
         }
-        .run(state)
+        .with_splash_state(SplashState::new(&version, vaults));
+
+        App::new(state, terminal).run()
     }
 
-    fn run(&mut self, mut state: AppState<'a>) -> Result<()> {
-        loop {
-            self.draw(&state)?;
-            if !state.is_running {
-                break;
-            }
+    fn run(&'a mut self) -> Result<()> {
+        self.state.is_running = true;
+
+        while self.state.is_running {
+            self.draw(&self.state)?;
             let event = event::read()?;
-            state = self.update(&state, self.handle_event(&event));
+            let action = self.handle_event(&event);
+            self.state = self.update(&self.state, action);
         }
+
         Ok(())
     }
 
-    fn update_help_modal(
-        &self,
-        state: AppState<'a>,
-        inner: HelpModalState,
-        action: Action,
-    ) -> AppState<'a> {
-        match action {
-            Action::ScrollUp(amount) => AppState {
-                help_modal: Some(inner.scroll_up(calc_scroll_amount(amount, state.size))),
-                ..state
-            },
-            Action::ScrollDown(amount) => AppState {
-                help_modal: Some(inner.scroll_down(calc_scroll_amount(amount, state.size))),
-                ..state
-            },
-            Action::Next => AppState {
-                help_modal: Some(inner.scroll_down(1)),
-                ..state
-            },
-            Action::Prev => AppState {
-                help_modal: Some(inner.scroll_up(1)),
-                ..state
-            },
-            _ => state,
-        }
-    }
-
-    fn update_vault_selector_modal(
-        &self,
-        state: AppState<'a>,
-        inner: VaultSelectorModalState<'a>,
-        action: Action,
-    ) -> AppState<'a> {
-        match action {
-            Action::ToggleVaultSelector => AppState {
-                vault_selector_modal: None,
-                ..state
-            },
-            Action::Select => {
-                // TODO: Add logic to not load the vault again if the same vault was picked in the
-                // selector.
-
-                let vault_selector_state = inner.vault_selector_state.select();
-
-                let vault_with_notes = vault_selector_state
-                    .selected()
-                    .and_then(|index| inner.vault_selector_state.get_item(index))
-                    .map(|vault| (vault, vault.entries()));
-
-                if let Some((vault, notes)) = vault_with_notes {
-                    AppState {
-                        screen: Screen::Main(Main::new(
-                            &vault.name,
-                            notes,
-                            state.size,
-                            vault_selector_state.items(),
-                        ).into()),
-                        vault_selector_modal: None,
-                        ..state
-                    }
-                } else {
-                    state
-                }
-            }
-            Action::Next => AppState {
-                vault_selector_modal: Some(VaultSelectorModalState {
-                    vault_selector_state: inner.vault_selector_state.next(),
-                }),
-                ..state
-            },
-            Action::Prev => AppState {
-                vault_selector_modal: Some(VaultSelectorModalState {
-                    vault_selector_state: inner.vault_selector_state.previous(),
-                }),
-                ..state
-            },
-            _ => state,
-        }
-    }
-
-    fn update_select_mode(
-        &self,
-        state: AppState<'a>,
-        inner: Main<'a>,
-        action: Action,
-    ) -> AppState<'a> {
-        match action {
-            Action::ToggleMode => AppState {
-                screen: Screen::Main(Main {
-                    mode: Mode::Normal,
-                    explorer_state: inner.explorer_state.close(),
-                    ..inner
-                }.into()),
-                ..state
-            },
-            Action::ScrollUp(amount) => AppState {
-                screen: Screen::Main(Main {
-                    markdown_view_state: inner
-                        .markdown_view_state
-                        .scroll_up(calc_scroll_amount(amount, state.size)),
-                    ..inner
-                }.into()),
-                ..state
-            },
-            Action::ScrollDown(amount) => AppState {
-                screen: Screen::Main(Main {
-                    markdown_view_state: inner
-                        .markdown_view_state
-                        .scroll_down(calc_scroll_amount(amount, state.size)),
-                    ..inner
-                }.into()),
-                ..state
-            },
-            Action::Select => {
-                let sidepanel_state = inner.explorer_state.select();
-
-                let selected_note = sidepanel_state
-                    .selected_path()
-                    .and_then(|path| inner.notes.find_note(&path))
-                    .map(SelectedNote::from);
-
-                AppState {
-                    screen: Screen::Main(Main {
-                        explorer_state: sidepanel_state,
-                        selected_note: selected_note.clone(),
-                        markdown_view_state: inner
-                            .markdown_view_state
-                            .set_text(selected_note.map(|note| note.content).unwrap_or_default())
-                            .reset_scrollbar(),
-                        ..inner
-                    }.into()),
-                    ..state
-                }
-            }
-            Action::ToggleSort => AppState {
-                screen: Screen::Main(Main {
-                    explorer_state: inner.explorer_state.toggle_sort(),
-                    ..inner
-                }.into()),
-                ..state
-            },
-
-            Action::Next => AppState {
-                screen: Screen::Main(Main {
-                    explorer_state: inner.explorer_state.next(),
-                    ..inner
-                }.into()),
-                ..state
-            },
-            Action::Prev => AppState {
-                screen: Screen::Main(Main {
-                    explorer_state: inner.explorer_state.previous(),
-                    ..inner
-                }.into()),
-                ..state
-            },
-            _ => state,
-        }
-    }
-
-    fn update_normal_mode(
-        &self,
-        state: AppState<'a>,
-        inner: Main<'a>,
-        action: Action,
-    ) -> AppState<'a> {
-        match action {
-            Action::ToggleMode => AppState {
-                screen: Screen::Main(Main {
-                    mode: Mode::Select,
-                    explorer_state: inner.explorer_state.open(),
-                    ..inner
-                }.into()),
-                ..state
-            },
-            Action::ScrollUp(amount) => AppState {
-                screen: Screen::Main(Main {
-                    markdown_view_state: inner
-                        .markdown_view_state
-                        .scroll_up(calc_scroll_amount(amount, state.size)),
-                    ..inner
-                }.into()),
-                ..state
-            },
-            Action::ScrollDown(amount) => AppState {
-                screen: Screen::Main(Main {
-                    markdown_view_state: inner
-                        .markdown_view_state
-                        .scroll_down(calc_scroll_amount(amount, state.size)),
-                    ..inner
-                }.into()),
-                ..state
-            },
-            Action::Next => AppState {
-                screen: Screen::Main(Main {
-                    markdown_view_state: inner.markdown_view_state.scroll_down(1),
-                    ..inner
-                }.into()),
-                ..state
-            },
-            Action::Prev => AppState {
-                screen: Screen::Main(Main {
-                    markdown_view_state: inner.markdown_view_state.scroll_up(1),
-                    ..inner
-                }.into()),
-                ..state
-            },
-            _ => state,
-        }
-    }
-
-    fn update_main_state(
-        &self,
-        state: AppState<'a>,
-        inner: Main<'a>,
-        action: Action,
-    ) -> AppState<'a> {
-        if let Action::ToggleVaultSelector = action {
-            return AppState {
-                vault_selector_modal: if state.vault_selector_modal.is_some() {
-                    None
-                } else {
-                    Some(VaultSelectorModalState::new(inner.vaults.clone()))
-                },
-                ..state
-            };
-        }
-
-        match inner.mode {
-            Mode::Select => self.update_select_mode(state, inner, action),
-            Mode::Normal => self.update_normal_mode(state, inner, action),
-            Mode::Insert => state,
-        }
-    }
-
-    fn update_start_state(
-        &self,
-        state: AppState<'a>,
-        inner: Start<'a>,
-        action: Action,
-    ) -> AppState<'a> {
-        match action {
-            Action::Select => {
-                let splash_state = inner.start_state.select();
-
-                let vault_with_notes = splash_state
-                    .selected()
-                    .and_then(|index| splash_state.get_item(index))
-                    .map(|vault| (vault, vault.entries()));
-
-                if let Some((vault, notes)) = vault_with_notes {
-                    AppState {
-                        screen: Screen::Main(Main::new(
-                            &vault.name,
-                            notes,
-                            state.size,
-                            inner.start_state.items(),
-                        ).into()),
-                        ..state
-                    }
-                } else {
-                    state
-                }
-            }
-            Action::Next => AppState {
-                screen: Screen::Start(Start {
-                    start_state: inner.start_state.next(),
-                }),
-                ..state
-            },
-            Action::Prev => AppState {
-                screen: Screen::Start(Start {
-                    start_state: inner.start_state.previous(),
-                }),
-                ..state
-            },
-            _ => state,
-        }
-    }
-
-    fn update(&self, state: &AppState<'a>, action: Option<Action>) -> AppState<'a> {
-        let state = state.clone();
-        let screen = state.screen.clone();
-
-        let Some(action) = action else {
-            return state;
-        };
-
-        match action {
-            Action::Quit => AppState {
-                is_running: false,
-                ..state
-            },
-            Action::ToggleHelp => AppState {
-                help_modal: if state.help_modal.is_some() {
-                    None
-                } else {
-                    Some(HelpModalState::new(&help_text()))
-                },
-                ..state
-            },
-            Action::Resize(size) => AppState { size, ..state },
-            _ if state.help_modal.is_some() => {
-                self.update_help_modal(state.clone(), state.help_modal.unwrap().clone(), action)
-            }
-            _ if state.vault_selector_modal.is_some() => self.update_vault_selector_modal(
-                state.clone(),
-                state.vault_selector_modal.unwrap().clone(),
-                action,
-            ),
-            _ => match screen {
-                Screen::Start(inner) => self.update_start_state(state, inner, action),
-                Screen::Main(inner) => self.update_main_state(state, inner.into(), action),
-            },
-        }
-    }
-
-    fn handle_event(&self, event: &Event) -> Option<Action> {
-        match event {
-            Event::Resize(cols, rows) => Some(Action::Resize(Size::new(*cols, *rows))),
-            Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
-                self.handle_press_key_event(key_event)
-            }
-            _ => None,
-        }
-    }
-
-    fn handle_press_key_event(&self, key_event: &KeyEvent) -> Option<Action> {
-        match key_event.code {
-            KeyCode::Char('q') => Some(Action::Quit),
-            KeyCode::Char('?') => Some(Action::ToggleHelp),
-            KeyCode::Char(' ') => Some(Action::ToggleVaultSelector),
-            KeyCode::Char('s') => Some(Action::ToggleSort),
-            KeyCode::Up => Some(Action::ScrollUp(ScrollAmount::One)),
-            KeyCode::Down => Some(Action::ScrollDown(ScrollAmount::One)),
-            KeyCode::Char('u') if key_event.modifiers.contains(KeyModifiers::CONTROL) => {
-                Some(Action::ScrollUp(ScrollAmount::HalfPage))
-            }
-            KeyCode::Char('c') if key_event.modifiers.contains(KeyModifiers::CONTROL) => {
-                Some(Action::Quit)
-            }
-            KeyCode::Char('d') if key_event.modifiers.contains(KeyModifiers::CONTROL) => {
-                Some(Action::ScrollDown(ScrollAmount::HalfPage))
-            }
-            KeyCode::Char('t') => Some(Action::ToggleMode),
-            KeyCode::Char('k') => Some(Action::Prev),
-            KeyCode::Char('j') => Some(Action::Next),
-            KeyCode::Enter => Some(Action::Select),
-            _ => None,
-        }
-    }
-
-    fn draw(&self, state: &AppState<'a>) -> Result<()> {
+    fn draw(&self, state: &'a AppState<'a>) -> Result<()> {
         let mut terminal = self.terminal.borrow_mut();
         let mut state = state.clone();
 
@@ -623,5 +445,306 @@ impl<'a> App<'a> {
         })?;
 
         Ok(())
+    }
+
+    fn handle_event(&self, event: &Event) -> Option<Message> {
+        match event {
+            Event::Resize(cols, rows) => Some(Message::Resize(Size::new(*cols, *rows))),
+            Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
+                self.handle_key_event(key_event)
+            }
+            _ => None,
+        }
+    }
+
+    #[rustfmt::skip]
+    fn handle_active_component_event(&self, key: &KeyEvent, active_component: ActivePane) -> Option<Message> {
+        match active_component {
+            ActivePane::Splash => splash::handle_event(key).map(Message::Splash),
+            ActivePane::Explorer => explorer::handle_event(key).map(Message::Explorer),
+            ActivePane::NoteViewer => note_viewer::handle_event(key).map(Message::NoteViewer),
+            ActivePane::HelpModal => help_modal::handle_event(key).map(Message::HelpModal),
+            ActivePane::VaultSelectorModal => vault_selector_modal::handle_event(key).map(Message::VaultSelectorModal),
+        }
+    }
+
+    fn handle_key_event(&self, key: &KeyEvent) -> Option<Message> {
+        let global_action = match (key.code, key.modifiers) {
+            (KeyCode::Char('q'), _) => Some(Message::Quit),
+            (KeyCode::Char('?'), _) => Some(Message::HelpModal(help_modal::Message::Toggle)),
+            (KeyCode::Char('g'), KeyModifiers::CONTROL) => Some(Message::VaultSelectorModal(
+                vault_selector_modal::Message::Toggle,
+            )),
+            _ => None,
+        };
+
+        if global_action.is_some() {
+            return global_action;
+        }
+
+        let active_component = self.state.active_component();
+        self.handle_active_component_event(key, active_component)
+    }
+
+    fn update(&self, state: &AppState<'a>, message: Option<Message>) -> AppState<'a> {
+        let state = state.clone();
+        let Some(message) = message else {
+            return state;
+        };
+
+        let screen = state.screen.clone();
+
+        match message {
+            Message::Quit => state.set_running(false),
+            Message::Resize(size) => AppState {
+                screen_size: size,
+                ..state
+            },
+            Message::HelpModal(message) => {
+                let help_modal = help_modal::update(message.clone(), state.help_modal.clone());
+
+                match message {
+                    help_modal::Message::ScrollDown(scroll_amount) => {
+                        state.with_help_modal_state(help_modal.scroll_down(calc_scroll_amount(
+                            scroll_amount,
+                            modal_area_height(state.screen_size),
+                        )))
+                    }
+                    help_modal::Message::ScrollUp(scroll_amount) => {
+                        state.with_help_modal_state(help_modal.scroll_up(calc_scroll_amount(
+                            scroll_amount,
+                            modal_area_height(state.screen_size),
+                        )))
+                    }
+                    _ => state.with_help_modal_state(help_modal),
+                }
+            }
+            Message::VaultSelectorModal(message) => {
+                let ScreenState::Main(_) = screen else {
+                    return state;
+                };
+
+                let vault_selector_modal = vault_selector_modal::update(
+                    message.clone(),
+                    state.vault_selector_modal.clone(),
+                );
+
+                match message {
+                    vault_selector_modal::Message::Select => vault_selector_modal
+                        .selected()
+                        .and_then(|index| vault_selector_modal.clone().get_item(index))
+                        .map(|vault| {
+                            state
+                                .with_main_state(MainState::new(&vault.name, vault.entries()))
+                                .with_vault_selector_modal_state(vault_selector_modal.hide())
+                        })
+                        .unwrap_or(state),
+                    _ => state.with_vault_selector_modal_state(vault_selector_modal),
+                }
+            }
+            Message::Splash(message) => {
+                let ScreenState::Splash(splash_state) = screen else {
+                    return state;
+                };
+
+                let splash_state = splash::update(message.clone(), splash_state);
+
+                match message {
+                    splash::Message::Open => splash_state
+                        .selected()
+                        .and_then(|index| splash_state.clone().get_item(index))
+                        .map(|vault| {
+                            state.with_main_state(MainState::new(&vault.name, vault.entries()))
+                        })
+                        .unwrap_or(state),
+                    _ => state.with_splash_state(splash_state),
+                }
+            }
+            Message::Explorer(message) => {
+                let ScreenState::Main(main_state) = screen else {
+                    return state;
+                };
+
+                let explorer = explorer::update(message.clone(), main_state.explorer.clone());
+
+                match message {
+                    explorer::Message::SwitchPane => state.with_main_state(MainState {
+                        active_pane: ActivePane::NoteViewer,
+                        note_viewer: main_state.note_viewer.set_active(true),
+                        explorer,
+                        ..*main_state
+                    }),
+                    explorer::Message::ScrollUp(scroll_amount) => {
+                        state.with_main_state(MainState {
+                            explorer: explorer.previous(calc_scroll_amount(
+                                scroll_amount,
+                                state.screen_size.height.into(),
+                            )),
+                            ..*main_state
+                        })
+                    }
+                    explorer::Message::ScrollDown(scroll_amount) => {
+                        state.with_main_state(MainState {
+                            explorer: explorer.next(calc_scroll_amount(
+                                scroll_amount,
+                                state.screen_size.height.into(),
+                            )),
+                            ..*main_state
+                        })
+                    }
+                    explorer::Message::Toggle => state.with_main_state(match explorer.open {
+                        true => MainState {
+                            explorer,
+                            ..*main_state
+                        },
+                        false => MainState {
+                            active_pane: ActivePane::NoteViewer,
+                            explorer: explorer.set_active(false),
+                            note_viewer: main_state.note_viewer.set_active(true),
+                            ..*main_state
+                        },
+                    }),
+                    explorer::Message::Open => {
+                        let note = explorer.selected_note.clone();
+                        let selected_note = note.map(SelectedNote::from);
+
+                        let note_viewer = main_state
+                            .note_viewer
+                            .clone()
+                            .set_text(
+                                selected_note
+                                    .clone()
+                                    .map(|note| note.content.clone())
+                                    .unwrap_or_default(),
+                            )
+                            .reset_scrollbar();
+
+                        state.with_main_state(MainState {
+                            explorer,
+                            note_viewer,
+                            selected_note,
+                            ..*main_state
+                        })
+                    }
+                    _ => state.with_main_state(MainState {
+                        explorer,
+                        ..*main_state
+                    }),
+                }
+            }
+            Message::NoteViewer(message) => {
+                let ScreenState::Main(main_state) = screen else {
+                    return state;
+                };
+
+                match message {
+                    note_viewer::Message::ScrollUp(scroll_amount) => {
+                        state.with_main_state(MainState {
+                            note_viewer: main_state.note_viewer.scroll_up(calc_scroll_amount(
+                                scroll_amount,
+                                state.screen_size.height.into(),
+                            )),
+                            ..*main_state
+                        })
+                    }
+                    note_viewer::Message::ScrollDown(scroll_amount) => {
+                        state.with_main_state(MainState {
+                            note_viewer: main_state.note_viewer.scroll_down(calc_scroll_amount(
+                                scroll_amount,
+                                state.screen_size.height.into(),
+                            )),
+                            ..*main_state
+                        })
+                    }
+                    note_viewer::Message::SwitchPane => state.with_main_state(MainState {
+                        active_pane: ActivePane::Explorer,
+                        note_viewer: main_state.note_viewer.set_active(false),
+                        explorer: main_state.explorer.set_active(true),
+                        ..*main_state
+                    }),
+                    note_viewer::Message::ToggleExplorer => {
+                        state.with_main_state(match main_state.explorer.open {
+                            true => MainState {
+                                explorer: main_state.explorer.toggle(),
+                                ..*main_state
+                            },
+                            false => MainState {
+                                active_pane: ActivePane::Explorer,
+                                explorer: main_state.explorer.toggle().set_active(true),
+                                note_viewer: main_state.note_viewer.set_active(false),
+                                ..*main_state
+                            },
+                        })
+                    }
+                }
+            }
+        }
+    }
+
+    fn render_splash(&self, area: Rect, buf: &mut Buffer, state: &mut SplashState<'a>) {
+        Splash::default().render_ref(area, buf, state)
+    }
+
+    fn render_main(&self, area: Rect, buf: &mut Buffer, state: &mut MainState<'a>) {
+        let [content, statusbar] = Layout::vertical([Constraint::Fill(1), Constraint::Length(1)])
+            .horizontal_margin(1)
+            .areas(area);
+
+        let (left, right) = if state.explorer.open {
+            (Constraint::Length(35), Constraint::Fill(1))
+        } else {
+            (Constraint::Length(5), Constraint::Fill(1))
+        };
+
+        let [explorer_pane, note] = Layout::horizontal([left, right]).areas(content);
+
+        Explorer::new().render(explorer_pane, buf, &mut state.explorer);
+        MarkdownView.render_ref(note, buf, &mut state.note_viewer);
+
+        let (_, counts) = state
+            .selected_note
+            .clone()
+            .map(|note| {
+                let content = note.content.as_str();
+                (
+                    note.name,
+                    (WordCount::from(content), CharCount::from(content)),
+                )
+            })
+            .unzip();
+
+        let (word_count, char_count) = counts.unwrap_or_default();
+
+        let mut status_bar_state = StatusBarState::new(
+            state.active_pane.into(),
+            word_count.into(),
+            char_count.into(),
+        );
+
+        let status_bar = StatusBar::default();
+        status_bar.render_ref(statusbar, buf, &mut status_bar_state);
+    }
+
+    fn render_modals(&self, area: Rect, buf: &mut Buffer, state: &mut AppState<'a>) {
+        if state.vault_selector_modal.visible {
+            VaultSelectorModal::default().render(area, buf, &mut state.vault_selector_modal);
+        }
+
+        if state.help_modal.visible {
+            HelpModal.render(area, buf, &mut state.help_modal);
+        }
+    }
+}
+
+impl<'a> StatefulWidgetRef for App<'a> {
+    type State = AppState<'a>;
+
+    fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        match &mut state.screen {
+            ScreenState::Splash(state) => self.render_splash(area, buf, state),
+            ScreenState::Main(state) => self.render_main(area, buf, state),
+        };
+
+        self.render_modals(area, buf, state)
     }
 }

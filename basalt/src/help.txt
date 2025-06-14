@@ -14,6 +14,7 @@
 ───────────────────────────────────────────────────────────────────────────────
             %version-notice
 
+
 DISCLAIMER
 
   Basalt is in its early stages, with a very limited set of features, and is
@@ -25,97 +26,110 @@ DISCLAIMER
   Quitting the application may feel a bit abrupt, as the application exits
   immediately after pressing ‹q›. I have some plans to handle this differently
   in the future. For example, through a series of button presses or by using
-  command inputs similar to Vims ‹:quit› or ‹:q›.
+  command inputs similar to Vim's ‹:quit› or ‹:q›.
 
 VAULT SELECTION
 
-  On startup screen you can select the Vault you want to view. Any vaults
-  considered open are shown with a ◆ symbol marker.
+  On startup screen you can select the Vault you want to view. Any open vaults
+  are shown with a ◆ symbol marker.
+
+    ‹q›         Quit the application
+    ‹?›         Show this help
+    ‹k›         Move selection up
+    ‹j›         Move selection down
+    ‹↩ Enter›   Select and open the highlighted vault
+
+  The vault selection can be brought up as a modal by hitting ‹Ctrl+G› after
+  the startup screen.
+
+INTERFACE
+
+  The application has two main panes: the Explorer (file browser) on the left
+  and the Note Viewer on the right. You can switch between these panes using
+  the Tab key. The currently active pane will be highlighted and name of the
+  active pane is displayed in the lower left corner of the application.
+
+  EXPLORER PANE
+
+    Browse and select notes from your vault.
+
+    The explorer shows all notes and folders in your vault. You can navigate up
+    and down through the list, and press Enter to select and view a note. The
+    explorer panel can be toggled on/off to give more space to the note viewer.
 
       ‹q›         Quit the application
       ‹?›         Show this help
-      ‹k›         Move selection up
-      ‹j›         Move selection down
-      ‹↩ Enter›   Select and open the highlighted vault
+      ‹Esc›       Cancel/close modals
+      ‹Tab›       Switch to note viewer pane
+      ‹k / j›     Move selection up / down
+      ‹↑ / ↓›     Move selection up / down
+      ‹s›         Toggle note sorting
+      ‹t›         Toggle explorer panel visibility
+      ‹↩ Enter›   Select and view the highlighted note
 
-  The vault selection can be brought up as a modal by hitting ‹Space› after
-  startup screen.
+      ‹Ctrl+G›    Toggle vault selector modal
+      ‹Ctrl+B›    Toggle explorer panel visibility
+      ‹Ctrl+U›    Scroll up half a page
+      ‹Ctrl+D›    Scroll down half a page
 
-MODES
+  NOTE VIEWER PANE
 
-  The current mode is displayed in the bottom-left corner of the UI.
+    Read and navigate through your selected note.
 
-  The distinction between the SELECT and NORMAL modes is that in SELECT mode,
-  you can browse and preview the notes in the vault, and in NORMAL mode, you
-  can navigate the content of a single selected note. Scrolling the notes work
-  in both modes.
+    The note viewer displays the content of the selected note in a readable
+    format. You can scroll through the content using the arrow keys or
+    vim-style navigation.
 
-  SELECT
-          Navigate the vault's notes.
+      ‹q›         Quit the application
+      ‹?›         Show this help
+      ‹Esc›       Cancel/close modals
+      ‹Tab›       Switch to explorer pane
+      ‹k / j›     Scroll up / down
+      ‹↑ / ↓›     Scroll up / down
+      ‹t›         Toggle explorer panel visibility
 
-          In SELECT mode, the vault contents can be selected by pressing Enter
-          or Return key. The list can be traversed up or down using ‹j› for
-          down and ‹k› for up. To change to NORMAL mode and hide the side
-          panel, press ‹t›.
+      ‹Ctrl+G›    Toggle vault selector modal
+      ‹Ctrl+B›    Toggle explorer panel visibility
+      ‹Ctrl+U›    Scroll up half a page
+      ‹Ctrl+D›    Scroll down half a page
 
-            ‹q›         Quit the application
-            ‹?›         Show this help
-            ‹t›         Toggle side panel visibility and select mode
-            ‹k›         Move selection up
-            ‹j›         Move selection down
-            ‹s›         Toggle note sorting
-            ‹↑ / ↓›     Scroll selected note content up / down
-            ‹↩ Enter›   Select the highlighted note
-
-            ‹Space›     Toggle vault selector modal
-            ‹Ctrl-u›    Scroll selected note up half a page
-            ‹Ctrl-d›    Scroll selected note down half a page
-
-  NORMAL
-          Navigate the note.
-
-          In NORMAL mode, the contents of the note can be viewed and navigated.
-          Use mouse or arrow keys ‹↑ / ↓› to scroll up / down the note. To
-          toggle the SELECT mode and show side panel, press ‹t›.
-
-            ‹q›         Quit the application
-            ‹?›         Show this help
-            ‹t›         Toggle side panel visibility and select mode
-            ‹k›         Move selection up
-            ‹j›         Move selection down
-            ‹↑ / ↓›     Scroll selected note content up / down
-            ‹↩ Enter›   Select the highlighted note
-
-            ‹Space›     Toggle vault selector modal
-            ‹Ctrl-u›    Scroll selected note up half a page
-            ‹Ctrl-d›    Scroll selected note down half a page
-
-───────────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────
 
 KEY BINDINGS
 
+Global (available everywhere):
+
   ‹q›         Quit the application
   ‹?›         Show this help
-  ‹t›         Toggle side panel visibility and select mode
-  ‹k›         Move selection up
-  ‹j›         Move selection down
-  ‹s›         Toggle note sorting
-  ‹↑ / ↓›     Scroll selected up / down
-  ‹↩ Enter›   Select the highlighted note
+  ‹Esc›       Cancel/close modals
+  ‹Ctrl+G›    Toggle vault selector modal
 
-  ‹Space›     Toggle vault selector modal
-  ‹Ctrl-u›    Scroll up half a page
-  ‹Ctrl-d›    Scroll down half a page
+Navigation:
 
-───────────────────────────────────────────────────────────────────────────────
+  ‹Tab›       Switch between explorer and note viewer panes
+  ‹k / j›     Move selection or scroll up / down
+  ‹↑ / ↓›     Move selection or scroll up / down
+  ‹↩ Enter›   Select highlighted note (explorer only)
+
+Panel Control:
+
+  ‹t›         Toggle explorer panel visibility
+  ‹Ctrl+B›    Toggle explorer panel visibility
+  ‹s›         Toggle note sorting (explorer only)
+  ‹Ctrl+U›    Scroll up half a page
+  ‹Ctrl+D›    Scroll down half a page
+
+────────────────────────────────────────────────────────────────────────────
 
 FEATURES
 
   • Navigate and read notes from any Obsidian Vault using terminal
   • Nested folders and notes are supported
   • View markdown notes in a readable, custom styled format
+  • Toggle between focused note reading and vault exploration
+  • Sort notes alphabetically or by other criteria
 
-───────────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────
 
 KNOWN LIMITATIONS
 
@@ -125,3 +139,4 @@ KNOWN LIMITATIONS
   • Key bindings cannot be changed with configuration
   • There is no syntax highlighting for code blocks
   • Markdown inline text styles are not rendered
+
