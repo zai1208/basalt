@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.7.0 (2025-06-15)
+
+### Changed
+
+- [Refactor state management](https://github.com/erikjuhani/basalt/commit/0d49afb9dd7078215ed3fb15ee6dea23da1c0ba9)
+
+### Added
+
+- [Add visiblity and visiblity helper methods to HelpModal](https://github.com/erikjuhani/basalt/commit/8f92863932325157ffe0e181470d194ee90b2a23)
+- [Add visibility and helper methods to VaultSelectorModal](https://github.com/erikjuhani/basalt/commit/1243a33d62d0cac04d2bb7556477e44867b491f8)
+- [Add active field to MarkdownView to indicate active state](https://github.com/erikjuhani/basalt/commit/5880a160f30628ebec4f6e043e97b83ccb8a1899)
+
 ## 0.6.1 (2025-06-07)
 
 ### Fixed
