@@ -10,6 +10,7 @@ pub struct Scrollbar {
 pub struct MarkdownViewState {
     pub(crate) text: String,
     pub(crate) scrollbar: Scrollbar,
+    pub(crate) active: bool,
 }
 
 impl MarkdownViewState {
@@ -47,6 +48,13 @@ impl MarkdownViewState {
                 position: new_position,
             },
             ..self
+        }
+    }
+
+    pub fn set_active(&self, active: bool) -> Self {
+        Self {
+            active,
+            ..self.clone()
         }
     }
 
