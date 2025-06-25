@@ -34,3 +34,6 @@ jobs:
 
     - name: Build
       run: cargo build --profile ci
+
+    - name: Package
+      run: cargo package
