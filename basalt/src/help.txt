@@ -20,8 +20,7 @@ DISCLAIMER
   Basalt is in its early stages, with a very limited set of features, and is
   therefore susceptible to changes. Currently, the major drawback of Basalt is
   the inability to modify any notes. Another limitation is the missing or
-  incomplete rendering of certain markdown styles. However, these features will
-  be prioritized in the next version.
+  incomplete rendering of certain markdown styles.
 
   Quitting the application may feel a bit abrupt, as the application exits
   immediately after pressing ‹q›. I have some plans to handle this differently
@@ -32,6 +31,8 @@ VAULT SELECTION
 
   On startup screen you can select the Vault you want to view. Any open vaults
   are shown with a ◆ symbol marker.
+
+  DEFAULT KEY BINDINGS
 
     ‹q›         Quit the application
     ‹?›         Show this help
@@ -57,6 +58,8 @@ INTERFACE
     and down through the list, and press Enter to select and view a note. The
     explorer panel can be toggled on/off to give more space to the note viewer.
 
+    DEFAULT KEY BINDINGS
+
       ‹q›         Quit the application
       ‹?›         Show this help
       ‹Esc›       Cancel/close modals
@@ -80,6 +83,8 @@ INTERFACE
     format. You can scroll through the content using the arrow keys or
     vim-style navigation.
 
+      DEFAULT KEY BINDINGS
+
       ‹q›         Quit the application
       ‹?›         Show this help
       ‹Esc›       Cancel/close modals
@@ -95,7 +100,7 @@ INTERFACE
 
 ────────────────────────────────────────────────────────────────────────────
 
-KEY BINDINGS
+DEFAULT KEY BINDINGS
 
 Global (available everywhere):
 
@@ -114,8 +119,8 @@ Navigation:
 Panel Control:
 
   ‹t›         Toggle explorer panel visibility
-  ‹Ctrl+B›    Toggle explorer panel visibility
   ‹s›         Toggle note sorting (explorer only)
+  ‹Ctrl+B›    Toggle explorer panel visibility
   ‹Ctrl+U›    Scroll up half a page
   ‹Ctrl+D›    Scroll down half a page
 
@@ -125,6 +130,7 @@ FEATURES
 
   • Navigate and read notes from any Obsidian Vault using terminal
   • Nested folders and notes are supported
+  • Key bindings can be changed with configuration
   • View markdown notes in a readable, custom styled format
   • Toggle between focused note reading and vault exploration
   • Sort notes alphabetically or by other criteria
@@ -136,7 +142,6 @@ KNOWN LIMITATIONS
   • Images are not rendered
   • External links are not clickable
   • Notes cannot be modified
-  • Key bindings cannot be changed with configuration
   • There is no syntax highlighting for code blocks
   • Markdown inline text styles are not rendered
 

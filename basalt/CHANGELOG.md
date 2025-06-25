@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.0 (2025-06-25)
+
+### Added
+
+- [Add user configuration file support for customizable key bindings](https://github.com/erikjuhani/basalt/commit/b04b41a13a84aa2fce3300fa1b4cc44954f62f4f)
+- [Adds a 'config' field to the AppState, which is based on a toml file (#25)](https://github.com/erikjuhani/basalt/commit/ed24f4c649b5ea66896911e5350ba27ea03b4694)
+
+### Fixed
+
+- [Fix display issue with active Pane UI element](https://github.com/erikjuhani/basalt/commit/f05eb3af66e18b886c774670f972284c2bcce427)
+
 ## 0.7.0 (2025-06-15)
 
 ### Changed

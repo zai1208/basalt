@@ -42,8 +42,8 @@ impl<'a> StatefulWidgetRef for StatusBar<'a> {
             Span::from("").dark_gray(),
             Span::from(" ").bg(Color::DarkGray),
             Span::from(state.active_component_name)
-                .bg(Color::DarkGray)
-                .black()
+                .dark_gray()
+                .reversed()
                 .bold(),
             Span::from(" ").bg(Color::DarkGray),
             Span::from("").dark_gray(),
