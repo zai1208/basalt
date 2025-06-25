@@ -28,9 +28,84 @@ The problem for me personally is that when I leave the terminal, my flow breaks,
 
 The goal of basalt is not to replace the Obsidian app. Basalt is to fill and cater for a need to have a terminal view to the selection of notes and vaults, providing quick access from anywhere in the terminal with a simple command.
 
-## Keybindings
+## Configuration
 
-For now these are not configurable, but this will change when the configuration file is supported.
+Basalt keybindings can be changed or additional keybindings can be added by providing a configuration file. Directly under `$HOME/.basalt.toml` or `.config/basalt/config.toml`.
+
+Each keybinding is attached to a 'pane' and can be used when the pane is active. Global section affects all panes and is evaluated first.
+
+The configuration used for default key bindings:
+
+```toml
+[global]
+key_bindings = [
+ { key = "q", command = "quit" },
+ { key = "ctrl+g", command = "vault_selector_modal_toggle" },
+ { key = "?", command = "help_modal_toggle" },
+]
+
+[splash]
+key_bindings = [
+ { key = "k", command = "splash_up" },
+ { key = "j", command = "splash_down" },
+ { key = "up", command = "splash_up" },
+ { key = "down", command = "splash_down" },
+ { key = "enter", command = "splash_open" },
+]
+
+[explorer]
+key_bindings = [
+ { key = "k", command = "explorer_up" },
+ { key = "j", command = "explorer_down" },
+ { key = "up", command = "explorer_up" },
+ { key = "down", command = "explorer_down" },
+ { key = "t", command = "explorer_toggle" },
+ { key = "s", command = "explorer_sort" },
+ { key = "tab", command = "explorer_switch_pane" },
+ { key = "enter", command = "explorer_open" },
+ { key = "ctrl+b", command = "explorer_toggle" },
+ { key = "ctrl+u", command = "explorer_scroll_up_half_page" },
+ { key = "ctrl+d", command = "explorer_scroll_down_half_page" },
+]
+
+[note_viewer]
+key_bindings = [
+ { key = "k", command = "note_viewer_scroll_up_one" },
+ { key = "j", command = "note_viewer_scroll_down_one" },
+ { key = "up", command = "note_viewer_scroll_up_one" },
+ { key = "down", command = "note_viewer_scroll_down_one" },
+ { key = "t", command = "note_viewer_toggle_explorer" },
+ { key = "tab", command = "note_viewer_switch_pane" },
+ { key = "ctrl+b", command = "note_viewer_toggle_explorer" },
+ { key = "ctrl+u", command = "note_viewer_scroll_up_half_page" },
+ { key = "ctrl+d", command = "note_viewer_scroll_down_half_page" },
+]
+
+[help_modal]
+key_bindings = [
+ { key = "esc", command = "help_modal_close" },
+ { key = "k", command = "help_modal_scroll_up_one" },
+ { key = "j", command = "help_modal_scroll_down_one" },
+ { key = "up", command = "help_modal_scroll_up_one" },
+ { key = "down", command = "help_modal_scroll_down_one" },
+ { key = "ctrl+u", command = "help_modal_scroll_up_half_page" },
+ { key = "ctrl+d", command = "help_modal_scroll_down_half_page" },
+]
+
+[vault_selector_modal]
+key_bindings = [
+ { key = "k", command = "vault_selector_modal_up" },
+ { key = "j", command = "vault_selector_modal_down" },
+ { key = "up", command = "vault_selector_modal_up" },
+ { key = "down", command = "vault_selector_modal_down" },
+ { key = "enter", command = "vault_selector_modal_open" },
+ { key = "esc", command = "vault_selector_modal_close" },
+]
+```
+
+## Default Keybindings
+
+These keybindings can be overwritten or more can be added with user configuration.
 
 <kbd>q</kbd> Quit the application
 
@@ -46,7 +121,7 @@ For now these are not configurable, but this will change when the configuration 
 
 <kbd>↩ Enter</kbd> Select the highlighted note
 
-<kbd>Space</kbd> Toggle vault selector modal
+<kbd>Ctrl-g</kbd> Toggle vault selector modal
 
 <kbd>Ctrl-u</kbd> Scroll up half a page
 
@@ -92,8 +167,8 @@ For now these are not configurable, but this will change when the configuration 
     - [ ] Add ability to invoke command bar with `:`
     - [ ] Add commands for saving `:w` and quitting `:q`
     - [ ] Switch between scrollbar and paging using a command `:set scroll` or `:set paging`. Paging will only fit the content it can within the height of the `rect` and generate pages accordingly.
-- [ ] Configuration file (`.basalt.toml`)
-    - [ ] Add rudimentary configuration file and move key bindings to the file
+- [x] Configuration file (`.basalt.toml`)
+    - [x] Add rudimentary configuration file and move key bindings to the file
 - [x] Wrap lines with prefix (calculate width and add length of prefix)
 - [ ] Easy backups with Git (Config, (git2-rs)[https://github.com/rust-lang/git2-rs])
 - [ ] Integration tests using https://core.tcl-lang.org/expect/index

@@ -6,8 +6,9 @@ use serde::{
     Deserialize, Deserializer,
 };
 
-use super::Action;
-use crate::app::ScrollAmount;
+use crate::app::{
+    explorer, help_modal, note_viewer, splash, vault_selector_modal, Message, ScrollAmount,
+};
 use crate::config::ConfigError;
 
 #[derive(Clone, Debug, PartialEq, Deserialize)]
@@ -16,12 +17,16 @@ pub(crate) struct KeyBinding {
     pub command: Command,
 }
 
+impl From<(Key, Command)> for KeyBinding {
+    fn from((key, command): (Key, Command)) -> Self {
+        Self::new(key, command)
+    }
+}
+
 impl KeyBinding {
-    #[expect(dead_code)]
-    pub const CTRLC: KeyBinding = KeyBinding {
-        key: Key::CTRLC,
-        command: Command::Quit,
-    };
+    pub const fn new(key: Key, command: Command) -> Self {
+        Self { key, command }
+    }
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -37,23 +42,36 @@ impl fmt::Display for Key {
         if self.modifiers.is_empty() {
             write!(f, "{}", code)
         } else {
-            let modifiers = self
-                .modifiers
-                .iter_names()
-                .map(|(name, _)| name.to_lowercase())
-                .collect::<Vec<_>>()
-                .join("+");
-
-            write!(f, "{}+{}", code, modifiers)
+            let modifiers = self.modifiers.to_string().to_ascii_lowercase();
+            write!(f, "{}-{}", modifiers, code)
         }
     }
 }
 
 impl Key {
-    pub const CTRLC: Key = Key {
-        modifiers: KeyModifiers::CONTROL,
-        code: KeyCode::Char('c'),
-    };
+    pub const CTRL_C: Key = Key::new(KeyCode::Char('c'), KeyModifiers::CONTROL);
+
+    pub const fn new(code: KeyCode, modifiers: KeyModifiers) -> Self {
+        Self { code, modifiers }
+    }
+}
+
+impl From<char> for Key {
+    fn from(value: char) -> Self {
+        Self::new(KeyCode::Char(value), KeyModifiers::NONE)
+    }
+}
+
+impl From<(KeyCode, KeyModifiers)> for Key {
+    fn from((code, modifiers): (KeyCode, KeyModifiers)) -> Self {
+        Self::new(code, modifiers)
+    }
+}
+
+impl From<(char, KeyModifiers)> for Key {
+    fn from((char, modifiers): (char, KeyModifiers)) -> Self {
+        Self::new(KeyCode::Char(char), modifiers)
+    }
 }
 
 impl<'de> Deserialize<'de> for Key {
@@ -117,6 +135,8 @@ fn parse_code(code: &str) -> Result<KeyCode, ConfigError> {
             .strip_prefix('f')
             .and_then(|n| n.parse::<u8>().map(KeyCode::F).ok())
             .or(match code {
+                "esc" => Some(KeyCode::Esc),
+                "space" => Some(KeyCode::Char(' ')),
                 "backspace" => Some(KeyCode::Backspace),
                 "backtab" => Some(KeyCode::BackTab),
                 "delete" => Some(KeyCode::Delete),
@@ -158,33 +178,119 @@ impl From<&KeyEvent> for Key {
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub(crate) enum Command {
-    ScrollUp,
-    ScrollDown,
-    PageUp,
-    PageDown,
-    Next,
-    Previous,
     Quit,
-    Select,
-    ToggleHelp,
-    ToggleMode,
-    ToggleVaultSelector,
+
+    SplashUp,
+    SplashDown,
+    SplashOpen,
+
+    ExplorerUp,
+    ExplorerDown,
+    ExplorerOpen,
+    ExplorerSort,
+    ExplorerToggle,
+    ExplorerSwitchPane,
+    ExplorerScrollUpOne,
+    ExplorerScrollDownOne,
+    ExplorerScrollUpHalfPage,
+    ExplorerScrollDownHalfPage,
+
+    HelpModalScrollUpOne,
+    HelpModalScrollDownOne,
+    HelpModalScrollUpHalfPage,
+    HelpModalScrollDownHalfPage,
+    HelpModalToggle,
+    HelpModalClose,
+
+    NoteViewerScrollUpOne,
+    NoteViewerScrollDownOne,
+    NoteViewerScrollUpHalfPage,
+    NoteViewerScrollDownHalfPage,
+    NoteViewerSwitchPane,
+    NoteViewerToggleExplorer,
+
+    VaultSelectorModalUp,
+    VaultSelectorModalDown,
+    VaultSelectorModalClose,
+    VaultSelectorModalOpen,
+    VaultSelectorModalToggle,
 }
 
-impl From<Command> for Action {
+impl From<Command> for Message {
     fn from(value: Command) -> Self {
         match value {
-            Command::ScrollUp => Action::ScrollUp(ScrollAmount::One),
-            Command::ScrollDown => Action::ScrollDown(ScrollAmount::One),
-            Command::PageUp => Action::ScrollUp(ScrollAmount::HalfPage),
-            Command::PageDown => Action::ScrollDown(ScrollAmount::HalfPage),
-            Command::Next => Action::Next,
-            Command::Previous => Action::Prev,
-            Command::Quit => Action::Quit,
-            Command::Select => Action::Select,
-            Command::ToggleHelp => Action::ToggleHelp,
-            Command::ToggleMode => Action::ToggleMode,
-            Command::ToggleVaultSelector => Action::ToggleVaultSelector,
+            Command::Quit => Message::Quit,
+
+            Command::SplashUp => Message::Splash(splash::Message::Up),
+            Command::SplashDown => Message::Splash(splash::Message::Down),
+            Command::SplashOpen => Message::Splash(splash::Message::Open),
+
+            Command::ExplorerUp => Message::Explorer(explorer::Message::Up),
+            Command::ExplorerDown => Message::Explorer(explorer::Message::Down),
+            Command::ExplorerOpen => Message::Explorer(explorer::Message::Open),
+            Command::ExplorerSort => Message::Explorer(explorer::Message::Sort),
+            Command::ExplorerToggle => Message::Explorer(explorer::Message::Toggle),
+            Command::ExplorerSwitchPane => Message::Explorer(explorer::Message::SwitchPane),
+            Command::ExplorerScrollUpOne => {
+                Message::Explorer(explorer::Message::ScrollUp(ScrollAmount::One))
+            }
+            Command::ExplorerScrollDownOne => {
+                Message::Explorer(explorer::Message::ScrollDown(ScrollAmount::One))
+            }
+            Command::ExplorerScrollUpHalfPage => {
+                Message::Explorer(explorer::Message::ScrollUp(ScrollAmount::HalfPage))
+            }
+            Command::ExplorerScrollDownHalfPage => {
+                Message::Explorer(explorer::Message::ScrollDown(ScrollAmount::HalfPage))
+            }
+
+            Command::HelpModalScrollUpOne => {
+                Message::HelpModal(help_modal::Message::ScrollUp(ScrollAmount::One))
+            }
+            Command::HelpModalScrollDownOne => {
+                Message::HelpModal(help_modal::Message::ScrollDown(ScrollAmount::One))
+            }
+            Command::HelpModalScrollUpHalfPage => {
+                Message::HelpModal(help_modal::Message::ScrollUp(ScrollAmount::HalfPage))
+            }
+            Command::HelpModalScrollDownHalfPage => {
+                Message::HelpModal(help_modal::Message::ScrollDown(ScrollAmount::HalfPage))
+            }
+            Command::HelpModalToggle => Message::HelpModal(help_modal::Message::Toggle),
+            Command::HelpModalClose => Message::HelpModal(help_modal::Message::Close),
+
+            Command::NoteViewerScrollUpOne => {
+                Message::NoteViewer(note_viewer::Message::ScrollUp(ScrollAmount::One))
+            }
+            Command::NoteViewerScrollDownOne => {
+                Message::NoteViewer(note_viewer::Message::ScrollDown(ScrollAmount::One))
+            }
+            Command::NoteViewerScrollUpHalfPage => {
+                Message::NoteViewer(note_viewer::Message::ScrollUp(ScrollAmount::HalfPage))
+            }
+            Command::NoteViewerScrollDownHalfPage => {
+                Message::NoteViewer(note_viewer::Message::ScrollDown(ScrollAmount::HalfPage))
+            }
+            Command::NoteViewerSwitchPane => Message::NoteViewer(note_viewer::Message::SwitchPane),
+            Command::NoteViewerToggleExplorer => {
+                Message::NoteViewer(note_viewer::Message::ToggleExplorer)
+            }
+
+            Command::VaultSelectorModalClose => {
+                Message::VaultSelectorModal(vault_selector_modal::Message::Close)
+            }
+            Command::VaultSelectorModalToggle => {
+                Message::VaultSelectorModal(vault_selector_modal::Message::Toggle)
+            }
+            Command::VaultSelectorModalUp => {
+                Message::VaultSelectorModal(vault_selector_modal::Message::Up)
+            }
+            Command::VaultSelectorModalDown => {
+                Message::VaultSelectorModal(vault_selector_modal::Message::Down)
+            }
+            Command::VaultSelectorModalOpen => {
+                Message::VaultSelectorModal(vault_selector_modal::Message::Select)
+            }
         }
     }
 }

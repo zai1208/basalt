@@ -1,5 +1,5 @@
 use basalt_core::obsidian::{Note, Vault, VaultEntry};
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+use crossterm::event::{self, Event, KeyEvent, KeyEventKind};
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Flex, Layout, Rect, Size},
@@ -58,7 +58,6 @@ impl<'a> MainState<'a> {
 
 #[derive(Default, Clone)]
 pub struct AppState<'a> {
-    _config: Config,
     screen: ScreenState<'a>,
     screen_size: Size,
     is_running: bool,
@@ -140,25 +139,14 @@ impl Default for ScreenState<'_> {
     }
 }
 
-mod splash {
-    use crossterm::event::{KeyCode, KeyEvent};
-
+pub mod splash {
     use crate::splash::SplashState;
 
-    #[derive(Clone)]
+    #[derive(Clone, Debug, PartialEq)]
     pub enum Message {
         Up,
         Down,
         Open,
-    }
-
-    pub fn handle_event(key: &KeyEvent) -> Option<Message> {
-        match key.code {
-            KeyCode::Up | KeyCode::Char('k') => Some(Message::Up),
-            KeyCode::Down | KeyCode::Char('j') => Some(Message::Down),
-            KeyCode::Enter => Some(Message::Open),
-            _ => None,
-        }
     }
 
     pub fn update(message: Message, state: SplashState) -> SplashState {
@@ -170,14 +158,12 @@ mod splash {
     }
 }
 
-mod explorer {
-    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-
+pub mod explorer {
     use crate::explorer::ExplorerState;
 
     use super::ScrollAmount;
 
-    #[derive(Clone)]
+    #[derive(Clone, Debug, PartialEq)]
     pub enum Message {
         Up,
         Down,
@@ -187,27 +173,6 @@ mod explorer {
         SwitchPane,
         ScrollUp(ScrollAmount),
         ScrollDown(ScrollAmount),
-    }
-
-    pub fn handle_event(key: &KeyEvent) -> Option<Message> {
-        match key.code {
-            KeyCode::Up | KeyCode::Char('k') => Some(Message::Up),
-            KeyCode::Down | KeyCode::Char('j') => Some(Message::Down),
-            KeyCode::Enter | KeyCode::Char(' ') => Some(Message::Open),
-            KeyCode::Tab => Some(Message::SwitchPane),
-            KeyCode::Char('t') => Some(Message::Toggle),
-            KeyCode::Char('s') => Some(Message::Sort),
-            KeyCode::Char('b') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                Some(Message::Sort)
-            }
-            KeyCode::Char('u') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                Some(Message::ScrollUp(ScrollAmount::HalfPage))
-            }
-            KeyCode::Char('d') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                Some(Message::ScrollDown(ScrollAmount::HalfPage))
-            }
-            _ => None,
-        }
     }
 
     pub fn update(message: Message, state: ExplorerState) -> ExplorerState {
@@ -229,67 +194,29 @@ mod explorer {
     }
 }
 
-mod note_viewer {
-    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-
+pub mod note_viewer {
     use super::ScrollAmount;
 
-    #[derive(Clone)]
+    #[derive(Clone, Debug, PartialEq)]
     pub enum Message {
         SwitchPane,
         ToggleExplorer,
         ScrollUp(ScrollAmount),
         ScrollDown(ScrollAmount),
     }
-
-    pub fn handle_event(key: &KeyEvent) -> Option<Message> {
-        match key.code {
-            KeyCode::Up | KeyCode::Char('k') => Some(Message::ScrollUp(ScrollAmount::One)),
-            KeyCode::Down | KeyCode::Char('j') => Some(Message::ScrollDown(ScrollAmount::One)),
-            KeyCode::Tab => Some(Message::SwitchPane),
-            KeyCode::Char('u') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                Some(Message::ScrollUp(ScrollAmount::HalfPage))
-            }
-            KeyCode::Char('d') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                Some(Message::ScrollDown(ScrollAmount::HalfPage))
-            }
-            KeyCode::Char('b') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                Some(Message::ToggleExplorer)
-            }
-            KeyCode::Char('t') => Some(Message::ToggleExplorer),
-            _ => None,
-        }
-    }
 }
 
-mod help_modal {
-    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-
+pub mod help_modal {
     use crate::help_modal::HelpModalState;
 
     use super::ScrollAmount;
 
-    #[derive(Clone)]
+    #[derive(Clone, Debug, PartialEq)]
     pub enum Message {
         Toggle,
         Close,
         ScrollUp(ScrollAmount),
         ScrollDown(ScrollAmount),
-    }
-
-    pub fn handle_event(key: &KeyEvent) -> Option<Message> {
-        match key.code {
-            KeyCode::Esc => Some(Message::Close),
-            KeyCode::Up | KeyCode::Char('k') => Some(Message::ScrollUp(ScrollAmount::One)),
-            KeyCode::Down | KeyCode::Char('j') => Some(Message::ScrollDown(ScrollAmount::One)),
-            KeyCode::Char('u') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                Some(Message::ScrollUp(ScrollAmount::HalfPage))
-            }
-            KeyCode::Char('d') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                Some(Message::ScrollDown(ScrollAmount::HalfPage))
-            }
-            _ => None,
-        }
     }
 
     pub fn update(message: Message, state: HelpModalState) -> HelpModalState {
@@ -301,28 +228,16 @@ mod help_modal {
     }
 }
 
-mod vault_selector_modal {
-    use crossterm::event::{KeyCode, KeyEvent};
-
+pub mod vault_selector_modal {
     use crate::vault_selector_modal::VaultSelectorModalState;
 
-    #[derive(Clone)]
+    #[derive(Clone, Debug, PartialEq)]
     pub enum Message {
         Toggle,
         Up,
         Down,
         Select,
         Close,
-    }
-
-    pub fn handle_event(key: &KeyEvent) -> Option<Message> {
-        match key.code {
-            KeyCode::Esc => Some(Message::Close),
-            KeyCode::Up | KeyCode::Char('k') => Some(Message::Up),
-            KeyCode::Down | KeyCode::Char('j') => Some(Message::Down),
-            KeyCode::Enter => Some(Message::Select),
-            _ => None,
-        }
     }
 
     pub fn update(message: Message, state: VaultSelectorModalState) -> VaultSelectorModalState {
@@ -336,7 +251,7 @@ mod vault_selector_modal {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Message {
     Quit,
     Resize(Size),
@@ -397,6 +312,7 @@ fn help_text() -> String {
 
 pub struct App<'a> {
     state: AppState<'a>,
+    config: Config,
     terminal: RefCell<DefaultTerminal>,
 }
 
@@ -404,6 +320,7 @@ impl<'a> App<'a> {
     pub fn new(state: AppState<'a>, terminal: DefaultTerminal) -> Self {
         Self {
             state,
+            config: config::load().unwrap(),
             terminal: RefCell::new(terminal),
         }
     }
@@ -414,7 +331,6 @@ impl<'a> App<'a> {
 
         let state = AppState {
             // Surface toast if read config returns error
-            _config: config::load().unwrap(),
             screen_size: size,
             help_modal: HelpModalState::new(&help_text()),
             vault_selector_modal: VaultSelectorModalState::new(vaults.clone()),
@@ -464,26 +380,19 @@ impl<'a> App<'a> {
     #[rustfmt::skip]
     fn handle_active_component_event(&self, key: &KeyEvent, active_component: ActivePane) -> Option<Message> {
         match active_component {
-            ActivePane::Splash => splash::handle_event(key).map(Message::Splash),
-            ActivePane::Explorer => explorer::handle_event(key).map(Message::Explorer),
-            ActivePane::NoteViewer => note_viewer::handle_event(key).map(Message::NoteViewer),
-            ActivePane::HelpModal => help_modal::handle_event(key).map(Message::HelpModal),
-            ActivePane::VaultSelectorModal => vault_selector_modal::handle_event(key).map(Message::VaultSelectorModal),
+            ActivePane::Splash => self.config.splash.key_to_message(key.into()),
+            ActivePane::Explorer => self.config.explorer.key_to_message(key.into()),
+            ActivePane::NoteViewer => self.config.note_viewer.key_to_message(key.into()),
+            ActivePane::HelpModal => self.config.help_modal.key_to_message(key.into()),
+            ActivePane::VaultSelectorModal => self.config.vault_selector_modal.key_to_message(key.into()),
         }
     }
 
     fn handle_key_event(&self, key: &KeyEvent) -> Option<Message> {
-        let global_action = match (key.code, key.modifiers) {
-            (KeyCode::Char('q'), _) => Some(Message::Quit),
-            (KeyCode::Char('?'), _) => Some(Message::HelpModal(help_modal::Message::Toggle)),
-            (KeyCode::Char('g'), KeyModifiers::CONTROL) => Some(Message::VaultSelectorModal(
-                vault_selector_modal::Message::Toggle,
-            )),
-            _ => None,
-        };
+        let global_message = self.config.global.key_to_message(key.into());
 
-        if global_action.is_some() {
-            return global_action;
+        if global_message.is_some() {
+            return global_message;
         }
 
         let active_component = self.state.active_component();
