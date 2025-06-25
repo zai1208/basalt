@@ -217,6 +217,9 @@ fn read_user_config() -> Result<Config, ConfigError> {
         .map_err(ConfigError::from)
 }
 
+const BASE_CONFIGURATION_STR: &str =
+    include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/config.toml"));
+
 /// Loads and merges configuration from multiple sources in priority order.
 ///
 /// The configuration is built by layering sources with increasing precedence:
@@ -229,8 +232,7 @@ fn read_user_config() -> Result<Config, ConfigError> {
 pub fn load() -> Result<Config, ConfigError> {
     // TODO: Use compile time toml parsing instead to check the build error during compile time
     // Requires a custom proc-macro workspace crate
-    let mut base_config: Config =
-        toml::from_str::<TomlConfig>(include_str!("../../config.toml"))?.into();
+    let mut base_config: Config = toml::from_str::<TomlConfig>(BASE_CONFIGURATION_STR)?.into();
 
     // TODO: Parsing errors related to the configuration file should ideally be surfaced as warnings.
     // This is pending a solution for toast notifications and proper warning/error logging.
@@ -258,7 +260,7 @@ mod tests {
         // TODO: Does not work cross-platform as macOS has different names for the keys
         // Potentially needs two snapshots
         //
-        // let config: Config = toml::from_str::<TomlConfig>(include_str!("../../config.toml"))
+        // let config: Config = toml::from_str::<TomlConfig>(BASE_CONFIGURATION_STR)
         //     .unwrap()
         //     .into();
         //
