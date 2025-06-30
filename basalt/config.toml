@@ -26,14 +26,14 @@
 # explorer_scroll_up_half_page: scrolls the selector up half a page
 # explorer_scroll_down_half_page: scrolls the selector down half a page
 #
-# Note viewer commands:
+# Note editor commands:
 #
-# note_viewer_scroll_up_one: scrolls up by one
-# note_viewer_scroll_down_one: scrolls down by one
-# note_viewer_scroll_up_half_page: scrolls up by half page
-# note_viewer_scroll_down_half_page: scrolls down by half page
-# note_viewer_toggle_explorer: toggles explorer panel
-# note_viewer_switch_pane: switches pane from note viewer to explorer
+# note_editor_scroll_up_one: scrolls up by one
+# note_editor_scroll_down_one: scrolls down by one
+# note_editor_scroll_up_half_page: scrolls up by half page
+# note_editor_scroll_down_half_page: scrolls down by half page
+# note_editor_toggle_explorer: toggles explorer panel
+# note_editor_switch_pane: switches pane from note viewer to explorer
 #
 # Help modal commands:
 #
@@ -51,6 +51,9 @@
 # vault_selector_modal_close: closes vault selector modal
 # vault_selector_modal_open: opens the selected vault 
 # vault_selector_modal_toggle: toggles vault selector modal
+
+# Editor is experimental
+experimental_editor = false
 
 [global]
 key_bindings = [
@@ -83,17 +86,31 @@ key_bindings = [
  { key = "ctrl+d", command = "explorer_scroll_down_half_page" },
 ]
 
-[note_viewer]
+[note_editor]
 key_bindings = [
- { key = "k", command = "note_viewer_scroll_up_one" },
- { key = "j", command = "note_viewer_scroll_down_one" },
- { key = "up", command = "note_viewer_scroll_up_one" },
- { key = "down", command = "note_viewer_scroll_down_one" },
- { key = "t", command = "note_viewer_toggle_explorer" },
- { key = "tab", command = "note_viewer_switch_pane" },
- { key = "ctrl+b", command = "note_viewer_toggle_explorer" },
- { key = "ctrl+u", command = "note_viewer_scroll_up_half_page" },
- { key = "ctrl+d", command = "note_viewer_scroll_down_half_page" },
+ { key = "k", command = "note_editor_cursor_up" },
+ { key = "j", command = "note_editor_cursor_down" },
+ { key = "up", command = "note_editor_cursor_up" },
+ { key = "down", command = "note_editor_cursor_down" },
+ { key = "t", command = "note_editor_toggle_explorer" },
+ { key = "tab", command = "note_editor_switch_pane" },
+ { key = "ctrl+b", command = "note_editor_toggle_explorer" },
+ { key = "ctrl+u", command = "note_editor_scroll_up_half_page" },
+ { key = "ctrl+d", command = "note_editor_scroll_down_half_page" },
+
+ # Experimental editor 
+ { key = "i", command = "note_editor_experimental_set_edit_mode" },
+ { key = "shift+r", command = "note_editor_experimental_set_read_mode" },
+ { key = "ctrl+x", command = "note_editor_experimental_save" },
+ { key = "esc", command = "note_editor_experimental_exit_mode" },
+ { key = "h", command = "note_editor_experimental_cursor_left" },
+ { key = "l", command = "note_editor_experimental_cursor_right" },
+ { key = "left", command = "note_editor_experimental_cursor_left" },
+ { key = "right", command = "note_editor_experimental_cursor_right" },
+ # 'f' translates to arrow key right
+ { key = "alt+f", command = "note_editor_experimental_cursor_word_forward" },
+ # 'b' translates to arrow key left
+ { key = "alt+b", command = "note_editor_experimental_cursor_word_backward" },
 ]
 
 [help_modal]

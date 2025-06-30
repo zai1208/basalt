@@ -1,5 +1,5 @@
 //! A Markdown parser that transforms Markdown input into a custom abstract syntax tree (AST)
-//! intented to be rendered with [basalt](https://github.com/erikjuhani/basalt)—a TUI application
+//! intended to be rendered with [basalt](https://github.com/erikjuhani/basalt)—a TUI application
 //! for Obsidian.
 //!
 //! This module provides a [`Parser`] type, which processes raw Markdown input into a [`Vec`] of
@@ -172,7 +172,7 @@ impl From<&str> for TextNode {
 impl From<String> for TextNode {
     fn from(value: String) -> Self {
         Self {
-            content: value,
+            content: value.replace("\t", "   "),
             ..Default::default()
         }
     }

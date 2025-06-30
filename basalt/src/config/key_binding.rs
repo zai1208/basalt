@@ -1,13 +1,14 @@
 use std::fmt;
 
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+
 use serde::{
     de::{self, Visitor},
     Deserialize, Deserializer,
 };
 
 use crate::app::{
-    explorer, help_modal, note_viewer, splash, vault_selector_modal, Message, ScrollAmount,
+    explorer, help_modal, note_editor, splash, vault_selector_modal, Message, ScrollAmount,
 };
 use crate::config::ConfigError;
 
@@ -202,12 +203,24 @@ pub(crate) enum Command {
     HelpModalToggle,
     HelpModalClose,
 
-    NoteViewerScrollUpOne,
-    NoteViewerScrollDownOne,
-    NoteViewerScrollUpHalfPage,
-    NoteViewerScrollDownHalfPage,
-    NoteViewerSwitchPane,
-    NoteViewerToggleExplorer,
+    NoteEditorScrollUpOne,
+    NoteEditorScrollDownOne,
+    NoteEditorScrollUpHalfPage,
+    NoteEditorScrollDownHalfPage,
+    NoteEditorSwitchPane,
+    NoteEditorToggleExplorer,
+    NoteEditorCursorUp,
+    NoteEditorCursorDown,
+
+    // # Experimental editor
+    NoteEditorExperimentalCursorWordForward,
+    NoteEditorExperimentalCursorWordBackward,
+    NoteEditorExperimentalSetEditMode,
+    NoteEditorExperimentalSetReadMode,
+    NoteEditorExperimentalSave,
+    NoteEditorExperimentalExitMode,
+    NoteEditorExperimentalCursorLeft,
+    NoteEditorExperimentalCursorRight,
 
     VaultSelectorModalUp,
     VaultSelectorModalDown,
@@ -259,23 +272,47 @@ impl From<Command> for Message {
             Command::HelpModalToggle => Message::HelpModal(help_modal::Message::Toggle),
             Command::HelpModalClose => Message::HelpModal(help_modal::Message::Close),
 
-            Command::NoteViewerScrollUpOne => {
-                Message::NoteViewer(note_viewer::Message::ScrollUp(ScrollAmount::One))
+            Command::NoteEditorScrollUpOne => {
+                Message::NoteEditor(note_editor::Message::ScrollUp(ScrollAmount::One))
             }
-            Command::NoteViewerScrollDownOne => {
-                Message::NoteViewer(note_viewer::Message::ScrollDown(ScrollAmount::One))
+            Command::NoteEditorScrollDownOne => {
+                Message::NoteEditor(note_editor::Message::ScrollDown(ScrollAmount::One))
             }
-            Command::NoteViewerScrollUpHalfPage => {
-                Message::NoteViewer(note_viewer::Message::ScrollUp(ScrollAmount::HalfPage))
+            Command::NoteEditorScrollUpHalfPage => {
+                Message::NoteEditor(note_editor::Message::ScrollUp(ScrollAmount::HalfPage))
             }
-            Command::NoteViewerScrollDownHalfPage => {
-                Message::NoteViewer(note_viewer::Message::ScrollDown(ScrollAmount::HalfPage))
+            Command::NoteEditorScrollDownHalfPage => {
+                Message::NoteEditor(note_editor::Message::ScrollDown(ScrollAmount::HalfPage))
             }
-            Command::NoteViewerSwitchPane => Message::NoteViewer(note_viewer::Message::SwitchPane),
-            Command::NoteViewerToggleExplorer => {
-                Message::NoteViewer(note_viewer::Message::ToggleExplorer)
+            Command::NoteEditorSwitchPane => Message::NoteEditor(note_editor::Message::SwitchPane),
+            Command::NoteEditorCursorUp => Message::NoteEditor(note_editor::Message::CursorUp),
+            Command::NoteEditorCursorDown => Message::NoteEditor(note_editor::Message::CursorDown),
+            Command::NoteEditorToggleExplorer => {
+                Message::NoteEditor(note_editor::Message::ToggleExplorer)
             }
-
+            // Experimental
+            Command::NoteEditorExperimentalSetEditMode => {
+                Message::NoteEditor(note_editor::Message::EditMode)
+            }
+            Command::NoteEditorExperimentalSetReadMode => {
+                Message::NoteEditor(note_editor::Message::ReadMode)
+            }
+            Command::NoteEditorExperimentalSave => Message::NoteEditor(note_editor::Message::Save),
+            Command::NoteEditorExperimentalExitMode => {
+                Message::NoteEditor(note_editor::Message::ExitMode)
+            }
+            Command::NoteEditorExperimentalCursorWordForward => {
+                Message::NoteEditor(note_editor::Message::CursorWordForward)
+            }
+            Command::NoteEditorExperimentalCursorWordBackward => {
+                Message::NoteEditor(note_editor::Message::CursorWordBackward)
+            }
+            Command::NoteEditorExperimentalCursorLeft => {
+                Message::NoteEditor(note_editor::Message::CursorLeft)
+            }
+            Command::NoteEditorExperimentalCursorRight => {
+                Message::NoteEditor(note_editor::Message::CursorRight)
+            }
             Command::VaultSelectorModalClose => {
                 Message::VaultSelectorModal(vault_selector_modal::Message::Close)
             }

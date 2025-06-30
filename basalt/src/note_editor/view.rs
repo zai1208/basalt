@@ -52,7 +52,7 @@ use crate::stylized_text::{stylize, FontStyle};
 
 use super::parser;
 
-use super::state::MarkdownViewState;
+use super::state::EditorState;
 
 /// A widget for rendering markdown text using [`MarkdownViewState`].
 ///
@@ -324,7 +324,7 @@ impl MarkdownView {
 }
 
 impl StatefulWidgetRef for MarkdownView {
-    type State = MarkdownViewState;
+    type State = EditorState;
 
     fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let block = Block::bordered()
@@ -478,7 +478,7 @@ mod tests {
                     MarkdownView.render_ref(
                         frame.area(),
                         frame.buffer_mut(),
-                        &mut MarkdownViewState::new(text),
+                        &mut EditorState::new(text),
                     )
                 })
                 .unwrap();
