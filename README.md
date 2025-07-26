@@ -1,13 +1,12 @@
-<img align="left" width="125px" src="assets/basalt.png">
+<img align="left" width="125px" src="https://raw.githubusercontent.com/erikjuhani/basalt/refs/heads/main/assets/basalt.png?raw=true">
 <h3>Basalt&nbsp;&nbsp;</h3>
 <p>TUI Application to manage Obsidian notes&nbsp;&nbsp;&nbsp;&nbsp;</p>
 
-<hr/>
+<hr>
 
 TUI Application to manage Obsidian vaults and notes directly from the terminal ✨.
 
-<img src="assets/basalt_demo.gif">
-
+![Demo](https://raw.githubusercontent.com/erikjuhani/basalt/refs/heads/main/assets/basalt_demo.gif)
 ## Installation
 
 Install basalt using cargo:
@@ -17,7 +16,6 @@ cargo install basalt-tui
 ```
 
 Or use the precompiled binaries from the latest basalt release.
-
 ## Background
 
 This is something that has been brewing in my head for quite some time. There has been different incarnations over the years, however, nothing as substantial as this.
@@ -103,9 +101,9 @@ key_bindings = [
 ]
 ```
 
-## Default Keybindings
+## Default key bindings
 
-These keybindings can be overwritten or more can be added with user configuration.
+These key bindings can be overwritten or more can be added with user configuration.
 
 <kbd>q</kbd> Quit the application
 
