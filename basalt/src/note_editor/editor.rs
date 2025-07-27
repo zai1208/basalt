@@ -254,7 +254,7 @@ impl Editor<'_> {
 
                         [item].to_vec()
                     }
-                    _ => Editor::render_markdown(&child, area, Span::from(format!("  {}", prefix))),
+                    _ => Editor::render_markdown(&child, area, Span::from(format!("  {prefix}"))),
                 })
                 .chain(if prefix.to_string().is_empty() {
                     [Line::default()].to_vec()

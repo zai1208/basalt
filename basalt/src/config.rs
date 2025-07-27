@@ -54,9 +54,7 @@ impl fmt::Display for ConfigSection {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.key_bindings
             .iter()
-            .try_for_each(|(key, message)| -> fmt::Result {
-                writeln!(f, "{}: {:?}", key, message)
-            })?;
+            .try_for_each(|(key, message)| -> fmt::Result { writeln!(f, "{key}: {message:?}") })?;
 
         Ok(())
     }

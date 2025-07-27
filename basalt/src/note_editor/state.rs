@@ -348,7 +348,7 @@ impl<'text_buffer> EditorState<'text_buffer> {
     pub fn update_text_buffer_content(&mut self, content: &str) {
         let text_buffer_content = self.text_buffer().to_string();
         let (_, col) = self.text_buffer.cursor();
-        self.text_buffer = TextBuffer::from(format!("{}\n{}", content, text_buffer_content))
+        self.text_buffer = TextBuffer::from(format!("{content}\n{text_buffer_content}"))
             .with_cursor_position((content.lines().count() + 1, col));
     }
 

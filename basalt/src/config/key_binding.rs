@@ -41,10 +41,10 @@ impl fmt::Display for Key {
         let code = self.code.to_string().to_lowercase().replace(" ", "_");
 
         if self.modifiers.is_empty() {
-            write!(f, "{}", code)
+            write!(f, "{code}")
         } else {
             let modifiers = self.modifiers.to_string().to_ascii_lowercase();
-            write!(f, "{}-{}", modifiers, code)
+            write!(f, "{modifiers}-{code}")
         }
     }
 }
