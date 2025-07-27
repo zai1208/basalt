@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/usr/bin/env sh
+
+set -e
 
 cargo check --profile ci --workspace --all-targets
 cargo clippy --profile ci --workspace --all-targets -- -D warnings
