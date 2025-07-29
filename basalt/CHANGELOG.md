@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.0 (2025-07-30)
+
+### Added
+
+- [Add experimental note editor support](https://github.com/erikjuhani/basalt/commit/924e2e25d9515b08cead11f3f4ef0413ef500a22)
+
 ## 0.8.0 (2025-06-25)
 
 ### Added
