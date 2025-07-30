@@ -54,9 +54,7 @@ impl fmt::Display for ConfigSection {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.key_bindings
             .iter()
-            .try_for_each(|(key, message)| -> fmt::Result {
-                writeln!(f, "{}: {:?}", key, message)
-            })?;
+            .try_for_each(|(key, message)| -> fmt::Result { writeln!(f, "{key}: {message:?}") })?;
 
         Ok(())
     }
@@ -64,11 +62,12 @@ impl fmt::Display for ConfigSection {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Config {
+    pub experimental_editor: bool,
     pub global: ConfigSection,
     pub splash: ConfigSection,
     pub explorer: ConfigSection,
     pub help_modal: ConfigSection,
-    pub note_viewer: ConfigSection,
+    pub note_editor: ConfigSection,
     pub vault_selector_modal: ConfigSection,
 }
 
@@ -81,11 +80,12 @@ impl Default for Config {
 impl From<TomlConfig> for Config {
     fn from(value: TomlConfig) -> Self {
         Self {
+            experimental_editor: value.experimental_editor,
             global: value.global.into(),
             splash: value.splash.into(),
             explorer: value.explorer.into(),
             help_modal: value.help_modal.into(),
-            note_viewer: value.note_viewer.into(),
+            note_editor: value.note_editor.into(),
             vault_selector_modal: value.vault_selector_modal.into(),
         }
     }
@@ -106,10 +106,11 @@ impl Config {
     /// Takes self and another config and merges the `key_bindings` together overwriting the
     /// existing entries with the value from another config.
     pub(crate) fn merge(&mut self, config: Self) -> Self {
+        self.experimental_editor = config.experimental_editor;
         self.global.merge_key_bindings(config.global);
         self.explorer.merge_key_bindings(config.explorer);
         self.splash.merge_key_bindings(config.splash);
-        self.note_viewer.merge_key_bindings(config.note_viewer);
+        self.note_editor.merge_key_bindings(config.note_editor);
         self.help_modal.merge_key_bindings(config.help_modal);
         self.vault_selector_modal
             .merge_key_bindings(config.vault_selector_modal);
@@ -122,7 +123,7 @@ impl fmt::Display for Config {
         writeln!(f, "[global]\n{}", self.global)?;
         writeln!(f, "[splash]\n{}", self.splash)?;
         writeln!(f, "[explorer]\n{}", self.explorer)?;
-        writeln!(f, "[note_viewer]\n{}", self.note_viewer)?;
+        writeln!(f, "[note_editor]\n{}", self.note_editor)?;
         writeln!(f, "[help_modal]\n{}", self.help_modal)?;
         writeln!(f, "[vault_selector_modal]\n{}", self.vault_selector_modal)?;
 
@@ -177,6 +178,8 @@ impl<const N: usize> From<[(Key, Command); N]> for KeyBindings {
 #[derive(Clone, Debug, PartialEq, Deserialize, Default)]
 struct TomlConfig {
     #[serde(default)]
+    experimental_editor: bool,
+    #[serde(default)]
     global: TomlConfigSection,
     #[serde(default)]
     splash: TomlConfigSection,
@@ -185,7 +188,7 @@ struct TomlConfig {
     #[serde(default)]
     help_modal: TomlConfigSection,
     #[serde(default)]
-    note_viewer: TomlConfigSection,
+    note_editor: TomlConfigSection,
     #[serde(default)]
     vault_selector_modal: TomlConfigSection,
 }
@@ -252,6 +255,8 @@ pub fn load() -> Result<Config, ConfigError> {
 
 #[cfg(test)]
 mod tests {
+    use ratatui::crossterm::event::KeyModifiers;
+
     use super::*;
     // use insta::assert_snapshot;
 
@@ -269,8 +274,6 @@ mod tests {
 
     #[test]
     fn test_config() {
-        use crossterm::event::KeyModifiers;
-
         use key_binding::{Command, Key};
 
         let dummy_toml = r#"

@@ -1,3 +1,30 @@
+[[Basalt]] features and functionality can be customized using a user-defined configuration file. The configuration file should be located in one of the following directories:
+
+**macOS and Unix:**
+
+- `$HOME/.basalt.toml`
+- `$XDG_CONFIG_HOME/basalt/config.toml`
+
+**Windows:**
+
+- `%USERPROFILE%\.basalt.toml`
+- `%APPDATA%\basalt\config.toml`
+
+If configuration files exist in multiple locations, only the first one found will be used, with the home directory configuration taking precedence. 
+
+> [!WARNING]
+>
+> This behavior may change in future versions to merge all found configurations instead.
+
+## Key Mappings
+
+Basalt key mappings can be modified or extended by defining key mappings in the user configuration file.
+
+Each key mapping is associated with a specific 'pane' and becomes active when that pane has focus. The global section applies to all panes and is evaluated first.
+
+## Default configuration
+
+```toml
 # The corresponding pane needs to be _active_ in order for the keybindings to
 # be read and the attached command activated.
 #
@@ -52,7 +79,7 @@
 # vault_selector_modal_open: opens the selected vault 
 # vault_selector_modal_toggle: toggles vault selector modal
 
-# Editor is experimental
+# Editor is disabled by default. To enable editor change this setting to true.
 experimental_editor = false
 
 [global]
@@ -103,10 +130,6 @@ key_bindings = [
  { key = "shift+r", command = "note_editor_experimental_set_read_mode" },
  { key = "ctrl+x", command = "note_editor_experimental_save" },
  { key = "esc", command = "note_editor_experimental_exit_mode" },
- { key = "h", command = "note_editor_experimental_cursor_left" },
- { key = "l", command = "note_editor_experimental_cursor_right" },
- { key = "left", command = "note_editor_experimental_cursor_left" },
- { key = "right", command = "note_editor_experimental_cursor_right" },
  # 'f' translates to arrow key right
  { key = "alt+f", command = "note_editor_experimental_cursor_word_forward" },
  # 'b' translates to arrow key left
@@ -133,3 +156,4 @@ key_bindings = [
  { key = "enter", command = "vault_selector_modal_open" },
  { key = "esc", command = "vault_selector_modal_close" },
 ]
+```

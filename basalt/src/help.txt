@@ -12,15 +12,14 @@
                  vaults and notes directly from the terminal.
 
 ───────────────────────────────────────────────────────────────────────────────
-            %version-notice
-
+                                  %version-notice
 
 DISCLAIMER
 
   Basalt is in its early stages, with a very limited set of features, and is
-  therefore susceptible to changes. Currently, the major drawback of Basalt is
-  the inability to modify any notes. Another limitation is the missing or
-  incomplete rendering of certain markdown styles.
+  therefore susceptible to changes. The experimental editor feature is disabled
+  by default but can be enabled in the configuration file. When enabled, it
+  allows basic note modification and editing capabilities.
 
   Quitting the application may feel a bit abrupt, as the application exits
   immediately after pressing ‹q›. I have some plans to handle this differently
@@ -34,7 +33,8 @@ VAULT SELECTION
 
   DEFAULT KEY BINDINGS
 
-    ‹q›         Quit the application
+    ‹q›,        Quit the application
+    ‹Ctrl+C›
     ‹?›         Show this help
     ‹k›         Move selection up
     ‹j›         Move selection down
@@ -46,7 +46,7 @@ VAULT SELECTION
 INTERFACE
 
   The application has two main panes: the Explorer (file browser) on the left
-  and the Note Viewer on the right. You can switch between these panes using
+  and the Note Editor on the right. You can switch between these panes using
   the Tab key. The currently active pane will be highlighted and name of the
   active pane is displayed in the lower left corner of the application.
 
@@ -56,14 +56,15 @@ INTERFACE
 
     The explorer shows all notes and folders in your vault. You can navigate up
     and down through the list, and press Enter to select and view a note. The
-    explorer panel can be toggled on/off to give more space to the note viewer.
+    explorer panel can be toggled on/off to give more space to the note editor.
 
     DEFAULT KEY BINDINGS
 
-      ‹q›         Quit the application
+      ‹q›,        Quit the application
+      ‹Ctrl+C›
       ‹?›         Show this help
       ‹Esc›       Cancel/close modals
-      ‹Tab›       Switch to note viewer pane
+      ‹Tab›       Switch to note editor pane
       ‹k / j›     Move selection up / down
       ‹↑ / ↓›     Move selection up / down
       ‹s›         Toggle note sorting
@@ -75,54 +76,133 @@ INTERFACE
       ‹Ctrl+U›    Scroll up half a page
       ‹Ctrl+D›    Scroll down half a page
 
-  NOTE VIEWER PANE
+  NOTE EDITOR PANE
 
-    Read and navigate through your selected note.
+    Read and navigate through your selected note. The note editor supports
+    multiple modes when experimental editor is enabled.
 
-    The note viewer displays the content of the selected note in a readable
-    format. You can scroll through the content using the arrow keys or
-    vim-style navigation.
+    VIEW MODE (Default)
+
+      View mode displays the rendered markdown content with navigation support.
+      This is the default display mode for reading notes.
 
       DEFAULT KEY BINDINGS
 
-      ‹q›         Quit the application
-      ‹?›         Show this help
-      ‹Esc›       Cancel/close modals
-      ‹Tab›       Switch to explorer pane
-      ‹k / j›     Scroll up / down
-      ‹↑ / ↓›     Scroll up / down
-      ‹t›         Toggle explorer panel visibility
+        ‹q›         Quit the application
+        ‹?›         Show this help
+        ‹Esc›       Cancel/close modals
+        ‹Tab›       Switch to explorer pane
+        ‹k / j›     Move cursor up / down
+        ‹↑ / ↓›     Move cursor up / down
+        ‹← / →›     Move cursor left / right (one character)
+        ‹Alt+←›     Move cursor left by word
+        ‹Alt+→›     Move cursor right by word
+        ‹t›         Toggle explorer panel visibility
 
-      ‹Ctrl+G›    Toggle vault selector modal
-      ‹Ctrl+B›    Toggle explorer panel visibility
-      ‹Ctrl+U›    Scroll up half a page
-      ‹Ctrl+D›    Scroll down half a page
+        ‹Ctrl+G›    Toggle vault selector modal
+        ‹Ctrl+B›    Toggle explorer panel visibility
+        ‹Ctrl+U›    Scroll up half a page
+        ‹Ctrl+D›    Scroll down half a page
+
+        EXPERIMENTAL EDITOR (when enabled):
+        ‹i›         Enter edit mode
+        ‹Shift+R›   Enter read mode
+        ‹Ctrl+X›    Save note
+        ‹Esc›       Exit current mode
+
+    EDIT MODE (Experimental)
+
+      Edit mode allows you to make changes to your note. This mode uses the
+      tui-textarea crate and provides basic text editing capabilities.
+
+      WARNING: Edit mode key mappings cannot be modified through configuration.
+
+      EDITING COMMANDS
+
+        ‹Ctrl+H›, ‹Backspace›    Delete character before cursor
+        ‹Ctrl+D›, ‹Delete›       Delete character at cursor
+        ‹Ctrl+M›, ‹Enter›        Insert newline
+        ‹Ctrl+K›                 Delete from cursor to end of line
+        ‹Ctrl+J›                 Delete from cursor to beginning of line
+        ‹Ctrl+W›, ‹Alt+H›,       Delete word before cursor
+        ‹Alt+Backspace›
+        ‹Alt+D›, ‹Alt+Delete›    Delete word after cursor
+
+      UNDO/REDO AND CLIPBOARD
+
+        ‹Ctrl+U›                 Undo
+        ‹Ctrl+R›                 Redo
+        ‹Ctrl+C›, ‹Copy›         Copy selected text
+        ‹Ctrl+X›, ‹Cut›          Cut selected text
+        ‹Ctrl+Y›, ‹Paste›        Paste text
+
+      CURSOR MOVEMENT
+
+        ‹Ctrl+F›, ‹→›             Move forward one character
+        ‹Ctrl+B›, ‹←›             Move backward one character
+        ‹Ctrl+P›, ‹↑›             Move up one line
+        ‹Ctrl+N›, ‹↓›             Move down one line
+        ‹Alt+→›, ‹Ctrl+→›         Move forward by word
+        ‹Alt+←›, ‹Ctrl+←›         Move backward by word
+        ‹Alt+]›, ‹Alt+P›,         Move up by paragraph
+        ‹Ctrl+↑›
+        ‹Alt+[›, ‹Alt+N›,         Move down by paragraph
+        ‹Ctrl+↓›
+
+      LINE/DOCUMENT NAVIGATION
+
+        ‹Ctrl+E›, ‹End›,          Move to end of line
+        ‹Ctrl+Alt+F›
+        ‹Ctrl+A›, ‹Home›,         Move to beginning of line
+        ‹Ctrl+Alt+B›
+        ‹Alt+<›, ‹Ctrl+Alt+P›     Move to top of document
+        ‹Alt+>›, ‹Ctrl+Alt+N›     Move to bottom of document
+        ‹Ctrl+V›, ‹PageDown›      Scroll down by page
+        ‹Alt+V›, ‹PageUp›         Scroll up by page
 
 ────────────────────────────────────────────────────────────────────────────
 
-DEFAULT KEY BINDINGS
+CONFIGURATION
 
-Global (available everywhere):
+  Basalt key mappings can be modified or extended by defining key mappings in
+  the user configuration file. Each key mapping is associated with a specific
+  'pane' and becomes active when that pane has focus. The global section
+  applies to all panes and is evaluated first.
 
-  ‹q›         Quit the application
-  ‹?›         Show this help
-  ‹Esc›       Cancel/close modals
-  ‹Ctrl+G›    Toggle vault selector modal
+  The experimental editor feature is disabled by default. To enable editor
+  functionality, set `experimental_editor = true` in your configuration file.
 
-Navigation:
+  Available commands are organized by pane:
 
-  ‹Tab›       Switch between explorer and note viewer panes
-  ‹k / j›     Move selection or scroll up / down
-  ‹↑ / ↓›     Move selection or scroll up / down
-  ‹↩ Enter›   Select highlighted note (explorer only)
+  GLOBAL COMMANDS:
+    quit, vault_selector_modal_toggle, help_modal_toggle
 
-Panel Control:
+  SPLASH COMMANDS:
+    splash_up, splash_down, splash_open
 
-  ‹t›         Toggle explorer panel visibility
-  ‹s›         Toggle note sorting (explorer only)
-  ‹Ctrl+B›    Toggle explorer panel visibility
-  ‹Ctrl+U›    Scroll up half a page
-  ‹Ctrl+D›    Scroll down half a page
+  EXPLORER COMMANDS:
+    explorer_up, explorer_down, explorer_open, explorer_sort, explorer_toggle,
+    explorer_switch_pane, explorer_scroll_up_one, explorer_scroll_down_one,
+    explorer_scroll_up_half_page, explorer_scroll_down_half_page
+
+  NOTE EDITOR COMMANDS:
+    note_editor_cursor_up, note_editor_cursor_down, note_editor_scroll_up_one,
+    note_editor_scroll_down_one, note_editor_scroll_up_half_page,
+    note_editor_scroll_down_half_page, note_editor_toggle_explorer,
+    note_editor_switch_pane
+
+  EXPERIMENTAL EDITOR COMMANDS:
+    note_editor_experimental_set_edit_mode, note_editor_experimental_set_read_mode,
+    note_editor_experimental_save, note_editor_experimental_exit_mode,
+    note_editor_experimental_cursor_word_forward,
+    note_editor_experimental_cursor_word_backward
+
+  MODAL COMMANDS:
+    help_modal_toggle, help_modal_close, help_modal_scroll_up_one,
+    help_modal_scroll_down_one, help_modal_scroll_up_half_page,
+    help_modal_scroll_down_half_page, vault_selector_modal_up,
+    vault_selector_modal_down, vault_selector_modal_close,
+    vault_selector_modal_open, vault_selector_modal_toggle
 
 ────────────────────────────────────────────────────────────────────────────
 
@@ -133,7 +213,11 @@ FEATURES
   • Key bindings can be changed with configuration
   • View markdown notes in a readable, custom styled format
   • Toggle between focused note reading and vault exploration
-  • Sort notes alphabetically or by other criteria
+  • Sort notes alphabetically
+  • Experimental editor mode for note modification (when enabled)
+  • Multiple editor modes: View mode for reading, Edit mode for changes
+  • Basic text editing capabilities in Edit mode
+  • Undo/redo functionality and clipboard operations (Only in Edit mode while modifying a markdown block)
 
 ────────────────────────────────────────────────────────────────────────────
 
@@ -141,7 +225,8 @@ KNOWN LIMITATIONS
 
   • Images are not rendered
   • External links are not clickable
-  • Notes cannot be modified
+  • Markdown tables are not rendered properly
   • There is no syntax highlighting for code blocks
   • Markdown inline text styles are not rendered
-
+  • Experimental editor is disabled by default and requires configuration
+  • Edit mode key mappings cannot be customized

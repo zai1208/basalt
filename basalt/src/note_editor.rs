@@ -1,5 +1,6 @@
+mod editor;
 mod state;
-mod view;
+mod text_buffer;
 
 /// Provides Markdown parser that supports Obsidian flavor.
 /// Obsidian flavor is a combination of different flavors and a few differences.
@@ -14,7 +15,8 @@ mod view;
 /// This crate uses [`pulldown_cmark`] to parse the markdown and enable the applicable features. This
 /// crate uses own intermediate types to provide the parsed markdown nodes.
 /// pub mod markdown;
-mod parser;
+mod markdown_parser;
 
-pub use state::MarkdownViewState;
-pub use view::MarkdownView;
+pub use editor::Editor;
+pub use state::{EditorState, Mode};
+pub use text_buffer::TextBuffer;

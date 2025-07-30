@@ -1,12 +1,23 @@
-<img align="left" width="125px" src="assets/basalt.png">
-<h3>Basalt&nbsp;&nbsp;</h3>
+<img align="left" width="125px" src="https://raw.githubusercontent.com/erikjuhani/basalt/refs/heads/main/assets/basalt.png?raw=true"><h3>Basalt&nbsp;&nbsp;</h3>
 <p>TUI Application to manage Obsidian notes&nbsp;&nbsp;&nbsp;&nbsp;</p>
 
-<hr/>
+<hr>
 
 TUI Application to manage Obsidian vaults and notes directly from the terminal ✨.
 
-<img src="assets/basalt_demo.gif">
+![Demo](https://raw.githubusercontent.com/erikjuhani/basalt/refs/heads/main/assets/basalt_demo.gif)
+
+Basalt is a TUI (Terminal User Interface) application to manage Obsidian vaults and notes from the terminal. Basalt is cross-platform and can be installed and run in the major operating systems on Windows, macOS; and Linux.
+
+Basalt is not a complete or comprehensive replacement for Obsidian, but instead a minimalist approach for note management in terminal with a readable markdown rendering and [WYSIWYG](https://en.wikipedia.org/wiki/WYSIWYG) experience.
+
+## Vision
+
+- Basalt functions as a companion app for Obsidian that enables quick note editing without interrupting the terminal flow
+- Basalt enables text editing in a familiar way (Obsidian, vim) without having to rely on external editors
+- Basalt is a terminal based [WYSIWYG](https://en.wikipedia.org/wiki/WYSIWYG) markdown editor
+- Basalt works as a CLI for finding / deleting / creating notes and works with the rest of the unix tooling
+- Basalt is a standalone terminal note managing application that works seamlessly with Obsidian
 
 ## Installation
 
@@ -26,17 +37,94 @@ I have been using Neovim and the official Obsidian app. However, I wanted to hav
 
 The problem for me personally is that when I leave the terminal, my flow breaks, especially if I'm writing. Using an entirely different app disrupts that flow, and it _annoys_ me. So here I am, building a TUI for Obsidian.
 
-The goal of basalt is not to replace the Obsidian app. Basalt is to fill and cater for a need to have a terminal view to the selection of notes and vaults, providing quick access from anywhere in the terminal with a simple command.
+The goal of basalt is not to replace the Obsidian app. Basalt is to fill and cater a need to have a terminal view to the selection of notes and vaults, providing quick access from anywhere in the terminal with a simple command.
 
 ## Configuration
 
-Basalt keybindings can be changed or additional keybindings can be added by providing a configuration file. Directly under `$HOME/.basalt.toml` or `.config/basalt/config.toml`.
+[[Basalt]] features and functionality can be customized using a user-defined configuration file. The configuration file should be located in one of the following directories:
 
-Each keybinding is attached to a 'pane' and can be used when the pane is active. Global section affects all panes and is evaluated first.
+**macOS and Unix:**
 
-The configuration used for default key bindings:
+- `$HOME/.basalt.toml`
+- `$XDG_CONFIG_HOME/basalt/config.toml`
+
+**Windows:**
+
+- `%USERPROFILE%\.basalt.toml`
+- `%APPDATA%\basalt\config.toml`
+
+If configuration files exist in multiple locations, only the first one found will be used, with the home directory configuration taking precedence. 
+
+> [!WARNING]
+>
+> This behavior may change in future versions to merge all found configurations instead.
+
+### Key Mappings
+
+Basalt key mappings can be modified or extended by defining key mappings in the user configuration file.
+
+Each key mapping is associated with a specific 'pane' and becomes active when that pane has focus. The global section applies to all panes and is evaluated first.
+
+### Default configuration
 
 ```toml
+# The corresponding pane needs to be _active_ in order for the keybindings to
+# be read and the attached command activated.
+#
+# Global commands:
+#
+# quit: exits the application
+# vault_selector_modal_toggle: toggles vault selector modal (not available in splash screen)
+# help_modal_toggle: toggles help modal
+#
+# Splash commands:
+#
+# splash_up: moves selector up
+# splash_down: moves selector down
+# splash_open: opens the selected vault
+#
+# Explorer commands:
+#
+# explorer_up: moves selector up
+# explorer_down: moves selector down
+# explorer_open: opens the selected note in note viewer
+# explorer_sort: toggles note and folder sorting between A-z and Z-a 
+# explorer_toggle: toggles explorer panel
+# explorer_switch_pane: switches pane from explorer to note viewer
+# explorer_scroll_up_one: scrolls the selector up by one
+# explorer_scroll_down_one: scrolls the selector down by one
+# explorer_scroll_up_half_page: scrolls the selector up half a page
+# explorer_scroll_down_half_page: scrolls the selector down half a page
+#
+# Note editor commands:
+#
+# note_editor_scroll_up_one: scrolls up by one
+# note_editor_scroll_down_one: scrolls down by one
+# note_editor_scroll_up_half_page: scrolls up by half page
+# note_editor_scroll_down_half_page: scrolls down by half page
+# note_editor_toggle_explorer: toggles explorer panel
+# note_editor_switch_pane: switches pane from note viewer to explorer
+#
+# Help modal commands:
+#
+# help_modal_toggle: toggles help modal
+# help_modal_close: closes help modal
+# help_modal_scroll_up_one: scrolls up by one
+# help_modal_scroll_down_one: scrolls down by one
+# help_modal_scroll_up_half_page: scrolls up by half page
+# help_modal_scroll_down_half_page: scrolls down by half page
+#
+# Vault selector modal commands:
+#
+# vault_selector_modal_up: moves selector up
+# vault_selector_modal_down: moves selector down
+# vault_selector_modal_close: closes vault selector modal
+# vault_selector_modal_open: opens the selected vault 
+# vault_selector_modal_toggle: toggles vault selector modal
+
+# Editor is disabled by default. To enable editor change this setting to true.
+experimental_editor = false
+
 [global]
 key_bindings = [
  { key = "q", command = "quit" },
@@ -68,17 +156,27 @@ key_bindings = [
  { key = "ctrl+d", command = "explorer_scroll_down_half_page" },
 ]
 
-[note_viewer]
+[note_editor]
 key_bindings = [
- { key = "k", command = "note_viewer_scroll_up_one" },
- { key = "j", command = "note_viewer_scroll_down_one" },
- { key = "up", command = "note_viewer_scroll_up_one" },
- { key = "down", command = "note_viewer_scroll_down_one" },
- { key = "t", command = "note_viewer_toggle_explorer" },
- { key = "tab", command = "note_viewer_switch_pane" },
- { key = "ctrl+b", command = "note_viewer_toggle_explorer" },
- { key = "ctrl+u", command = "note_viewer_scroll_up_half_page" },
- { key = "ctrl+d", command = "note_viewer_scroll_down_half_page" },
+ { key = "k", command = "note_editor_cursor_up" },
+ { key = "j", command = "note_editor_cursor_down" },
+ { key = "up", command = "note_editor_cursor_up" },
+ { key = "down", command = "note_editor_cursor_down" },
+ { key = "t", command = "note_editor_toggle_explorer" },
+ { key = "tab", command = "note_editor_switch_pane" },
+ { key = "ctrl+b", command = "note_editor_toggle_explorer" },
+ { key = "ctrl+u", command = "note_editor_scroll_up_half_page" },
+ { key = "ctrl+d", command = "note_editor_scroll_down_half_page" },
+
+ # Experimental editor 
+ { key = "i", command = "note_editor_experimental_set_edit_mode" },
+ { key = "shift+r", command = "note_editor_experimental_set_read_mode" },
+ { key = "ctrl+x", command = "note_editor_experimental_save" },
+ { key = "esc", command = "note_editor_experimental_exit_mode" },
+ # 'f' translates to arrow key right
+ { key = "alt+f", command = "note_editor_experimental_cursor_word_forward" },
+ # 'b' translates to arrow key left
+ { key = "alt+b", command = "note_editor_experimental_cursor_word_backward" },
 ]
 
 [help_modal]
@@ -103,117 +201,58 @@ key_bindings = [
 ]
 ```
 
-## Default Keybindings
+## Contributing to Basalt
 
-These keybindings can be overwritten or more can be added with user configuration.
+[[Basalt]] is ***open for code contributions***, but _primarily_ for bug fixes. Why? Feature work can bring long-term maintenance overhead, and I'd like to keep that to a minimum. One big reason for limiting feature work is that I want to build features myself, as this is a _fun_ side project alongside work, and I would like to keep it that way—to an extent.
 
-<kbd>q</kbd> Quit the application
+However, I do realize that open source projects usually flourish with multiple contributors. Thus, I won't say no if you would like to contribute feature work, but please open an issue first so we can discuss it. This way we can avoid unnecessary effort or bikeshedding over architectural or stylistic choices. I have my own opinions and ideas on how certain things should be written in this project.
 
-<kbd>?</kbd> Show help
+> [!info]
+> I want this project to feel low-barrier, so don't be discouraged from opening an issue, whether it's about existing features, ideas, or anything else!
 
-<kbd>t</kbd> Toggle side panel visibility and select mode
+### What you can do right now
 
-<kbd>k</kbd> Move selection up
+#### Found a typo?
 
-<kbd>j</kbd> Move selection down
+Open a PR directly with the correction!
 
-<kbd>↑ / ↓</kbd> Scroll selected up / down
+#### Found a bug and know how to fix it?
 
-<kbd>↩ Enter</kbd> Select the highlighted note
+Open a PR with the fix!
 
-<kbd>Ctrl-g</kbd> Toggle vault selector modal
+#### Found a bug but not sure how to fix it or don't want to do it yourself?
 
-<kbd>Ctrl-u</kbd> Scroll up half a page
+Open an issue with steps to reproduce!
 
-<kbd>Ctrl-d</kbd> Scroll down half a page
+#### Want to contribute a feature?
 
-## Task List
+Open an issue first so we can chat about the feature work or claim an existing issue for yourself!
 
-- [x] Add rudimentary support for markdown rendering
-- [x] Add Side panel for note selection in vault
-- [x] Add bottom information bar that shows the current mode Select, Normal, Insert and statistics for words and characters
-- [x] Add help modal / popup with `?`
-- [x] Add vault selection screen with basalt logo (Splash screen)
-- [x] Add vault selector modal
-- [x] GitHub Workflows !
-    - [x] Run tests and build
-    - [x] Run create release artifacts (cross-platform binaries)
-    - [ ] Do not run test when pushing a tag
-    - [ ] Run `vhs` when basalt directory changes and commit it to the current PR
-    - [ ] Run cargo publish in release workflow for basalt-tui
-- [ ] Add Homebrew formula
-- [ ] Add `mdbook` and `gh` pages
-- [ ] Persistent scroll state in help modal
-- [ ] Fuzzy search in panes (note, side panel, modals)
-- [ ] Markdown rendering
-    - [x] Add text formatting to different styles like `Fraktur` and `DoubleStruck` for heading purposes
-    - [x] Improve and fix code block rendering, so it appears as a 'block'
-    - [ ] Add support to all markdown nodes
-    - [ ] Support complete Obsidian Flavor
-    - [ ] Add image rendering support
-- [ ] Note tree
-    - [x] Notes within Folders in vault
-    - [x] Collapsible folders
-    - [ ] Create new note under vault
-    - [ ] Move note
-    - [ ] Rename note
-    - [ ] Delete note under vault (with confirmation modal)
-- [ ] Editor mode
-    - [ ] Change to raw text where cursor is. Only changes the current markdown node. Text is inserted node by node.
-    - [ ] Edit and save notes
-    - [ ] Support some vim keybindings to get started (vim mode should be configurable option)
-    - [ ] Easy text yanking
-- [ ] Command bar
-    - [ ] Add ability to invoke command bar with `:`
-    - [ ] Add commands for saving `:w` and quitting `:q`
-    - [ ] Switch between scrollbar and paging using a command `:set scroll` or `:set paging`. Paging will only fit the content it can within the height of the `rect` and generate pages accordingly.
-- [x] Configuration file (`.basalt.toml`)
-    - [x] Add rudimentary configuration file and move key bindings to the file
-- [x] Wrap lines with prefix (calculate width and add length of prefix)
-- [ ] Easy backups with Git (Config, (git2-rs)[https://github.com/rust-lang/git2-rs])
-- [ ] Integration tests using https://core.tcl-lang.org/expect/index
-- [ ] When creating a link show autocomplete tooltip list of potential files to link to
-- [ ] Add features to basalt-core and basalt-widgets. Default feature set and individual features.
+### How to make your contribution
 
-## Contribution Policy (I want to help)
-
-Basalt is open for code contributions, but mainly for bug fixes. Feature work can bring long-term maintenance overhead, and I'd like to keep that to a minimum. One big reason for limiting feature work is that I want to build the features myself as this is my _FUN_ project alongside work, and I want to keep it that way.
-
-However, I do realize that open source projects usually flourish from multiple contributors, thus, I won't say no, if you would like to contribute on feature work, but please, open an issue first, so we can chat about it. That way we can avoid unnecessary effort or bike shedding over architectural or stylistic choices. I have my own opinions and ideas on how certain things should be written in this project.
-
-I want this project to feel low-barrier so don't be discouraged to open an issue, be it about existing features, ideas, or anything really!
-
-Furthermore, I will make a proper contribution's guideline a bit later, with more details on certain operational things of this project.
-
-If you find mistakes in the documentation or simple fixes in code please go ahead and open a pull request with the changes!
-
-### Contributing
-
-1. Make a fork from `basalt`
+1. Fork the `basalt` repository
 2. Create a branch
-3. Open a pull-request against basalt's main branch with your changes
-4. I'll review your pull-request as soon as possible and either leave comments or merge it
+3. Open a pull request against basalt's main branch with your changes
+4. I'll review your pull request as soon as possible and either leave comments or merge it
 
-#### I Found a Bug
-
-Know how to fix it? - Open a PR with the fix.
-
-Not sure or you don't want to do it yourself? - Open an issue with steps to reproduce.
-
-#### I Found a Typo
-
-Open a PR directly with the correction.
-
-#### I Want To Contribute on a Feature
-
-Open an issue first, so we can chat about the feature work!
+If you find mistakes in the documentation or need simple code fixes, please go ahead and open a pull request with the changes!
 
 ### Git Pre-push Hook
 
-There's a useful pre-push git-hook under `scripts`, which you can enable by running the following command:
+There's a useful pre-push git hook under `scripts`, which you can enable by running the following command:
 
-```
+```sh
 cp scripts/pre-push .git/hooks/
 ```
 
 The script runs the same test commands as in the `test.yml` workflow.
+
+### CI
+
+> [!missing]
+>
+> This section is unfinished. It should explain roughly what is being run in the CI and what is required for CI to actually run on a PR opened from a fork.
+
+---
+
+_I will create proper contribution guidelines later, with more details on certain operational aspects of this project._
