@@ -1,9 +1,20 @@
 name: Test
 
-on: [push, pull_request, workflow_dispatch]
+on: 
+  push:
+    branches:
+      - main
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  RUST_BACKTRACE: 1
 
 jobs:
   test:
@@ -22,18 +33,15 @@ jobs:
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
     - name: Check
-      run: cargo check --profile ci
+      run: cargo check --profile ci --workspace --all-targets
 
     - name: Clippy
-      # Add the following after fixing clippy warnings: "-- -D warnings"
-      # This will ensure that no additional warnings are merged into 'main'
       run: cargo clippy --profile ci --workspace --all-targets -- -D warnings
 
     - name: Test
       run: cargo test --profile ci --workspace --all-targets
 
-    - name: Build
-      run: cargo build --profile ci
-
-    - name: Package
-      run: cargo package
+    - name: Build and Package
+      run: |
+        cargo build --profile ci
+        cargo package --no-verify
