@@ -171,7 +171,8 @@ pub mod explorer {
         Open,
         Sort,
         Toggle,
-        SwitchPane,
+        SwitchPaneNext,
+        SwitchPanePrevious,
         ScrollUp(ScrollAmount),
         ScrollDown(ScrollAmount),
     }
@@ -183,7 +184,18 @@ pub mod explorer {
             Message::Sort => state.sort(),
             Message::Open => state.select(),
             Message::Toggle => state.toggle(),
-            Message::SwitchPane => {
+            Message::SwitchPaneNext | Message::SwitchPanePrevious => {
+                if state.active {
+                    state.set_active(false)
+                } else {
+                    state.set_active(true)
+                }
+            }
+            _ => state,
+        }
+    }
+}
+
                 if state.active {
                     state.set_active(false)
                 } else {
@@ -203,7 +215,8 @@ pub mod note_editor {
     #[derive(Clone, Debug, PartialEq)]
     pub enum Message {
         Save,
-        SwitchPane,
+        SwitchPaneNext,
+        SwitchPanePrevious,
         ToggleExplorer,
         EditMode,
         ExitMode,
@@ -515,9 +528,15 @@ impl<'a> App<'a> {
                 let explorer = explorer::update(message.clone(), main_state.explorer.clone());
 
                 match message {
-                    explorer::Message::SwitchPane => state.with_main_state(MainState {
+                    explorer::Message::SwitchPaneNext => state.with_main_state(MainState {
                         active_pane: ActivePane::NoteEditor,
                         note_editor: main_state.note_editor.set_active(true),
+                        explorer,
+                        ..*main_state
+                    }),
+                    explorer::Message::SwitchPanePrevious => state.with_main_state(MainState {
+                        active_pane: ActivePane::Outline,
+                        outline: main_state.outline.set_active(true),
                         explorer,
                         ..*main_state
                     }),
@@ -732,7 +751,13 @@ impl<'a> App<'a> {
                                 ..*main_state
                             },
                         }),
-                    note_editor::Message::SwitchPane => state.with_main_state(MainState {
+                    note_editor::Message::SwitchPaneNext => state.with_main_state(MainState {
+                        active_pane: ActivePane::Outline,
+                        note_editor: main_state.note_editor.set_active(false),
+                        outline: main_state.outline.set_active(true),
+                        ..*main_state
+                    }),
+                    note_editor::Message::SwitchPanePrevious => state.with_main_state(MainState {
                         active_pane: ActivePane::Explorer,
                         note_editor: main_state.note_editor.set_active(false),
                         explorer: main_state.explorer.set_active(true),

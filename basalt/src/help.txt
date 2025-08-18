@@ -40,6 +40,9 @@ VAULT SELECTION
     ‹j›         Move selection down
     ‹↩ Enter›   Select and open the highlighted vault
 
+    ‹Tab›       Switch to next pane
+    ‹Shift+Tab› Switch to previous pane
+
   The vault selection can be brought up as a modal by hitting ‹Ctrl+G› after
   the startup screen.
 
@@ -91,13 +94,15 @@ INTERFACE
         ‹q›         Quit the application
         ‹?›         Show this help
         ‹Esc›       Cancel/close modals
-        ‹Tab›       Switch to explorer pane
         ‹k / j›     Move cursor up / down
         ‹↑ / ↓›     Move cursor up / down
         ‹← / →›     Move cursor left / right (one character)
         ‹Alt+←›     Move cursor left by word
         ‹Alt+→›     Move cursor right by word
         ‹t›         Toggle explorer panel visibility
+
+        ‹Tab›       Switch to next pane
+        ‹Shift+Tab› Switch to previous pane
 
         ‹Ctrl+G›    Toggle vault selector modal
         ‹Ctrl+B›    Toggle explorer panel visibility

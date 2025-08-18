@@ -23,12 +23,12 @@ Renders the note without Markdown syntax, similar in function to Obsidian's Read
 
 #### Key Mappings
 
-|Mapping|Description|
-|---|---|
-|`↑`|Move cursor up by one line|
-|`↓`|Move cursor down by one line|
-|`Ctrl+D`|Scroll down by half a page|
-|`Ctrl+U`|Scroll up by half a page|
+| Mapping  | Description                  |
+| -------- | ---------------------------- |
+| `↑`      | Move cursor up by one line   |
+| `↓`      | Move cursor down by one line |
+| `Ctrl+D` | Scroll down by half a page   |
+| `Ctrl+U` | Scroll up by half a page     |
 
 ### View Mode
 

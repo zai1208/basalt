@@ -89,8 +89,9 @@ Each key mapping is associated with a specific 'pane' and becomes active when th
 # explorer_down: moves selector down
 # explorer_open: opens the selected note in note viewer
 # explorer_sort: toggles note and folder sorting between A-z and Z-a 
-# explorer_toggle: toggles explorer panel
-# explorer_switch_pane: switches pane from explorer to note viewer
+# explorer_toggle: toggles explorer pane
+# explorer_switch_pane_next: switches focus to next pane
+# explorer_switch_pane_previous: switches focus to previous pane
 # explorer_scroll_up_one: scrolls the selector up by one
 # explorer_scroll_down_one: scrolls the selector down by one
 # explorer_scroll_up_half_page: scrolls the selector up half a page
@@ -102,8 +103,9 @@ Each key mapping is associated with a specific 'pane' and becomes active when th
 # note_editor_scroll_down_one: scrolls down by one
 # note_editor_scroll_up_half_page: scrolls up by half page
 # note_editor_scroll_down_half_page: scrolls down by half page
-# note_editor_toggle_explorer: toggles explorer panel
-# note_editor_switch_pane: switches pane from note viewer to explorer
+# note_editor_toggle_explorer: toggles explorer pane
+# note_editor_switch_pane_next: switches focus to next pane
+# note_editor_switch_pane_previous: switches focus to previous pane
 #
 # Help modal commands:
 #
@@ -122,7 +124,7 @@ Each key mapping is associated with a specific 'pane' and becomes active when th
 # vault_selector_modal_open: opens the selected vault 
 # vault_selector_modal_toggle: toggles vault selector modal
 
-# Editor is disabled by default. To enable editor change this setting to true.
+# Editor is experimental
 experimental_editor = false
 
 [global]
@@ -149,7 +151,8 @@ key_bindings = [
  { key = "down", command = "explorer_down" },
  { key = "t", command = "explorer_toggle" },
  { key = "s", command = "explorer_sort" },
- { key = "tab", command = "explorer_switch_pane" },
+ { key = "tab", command = "explorer_switch_pane_next" },
+ { key = "shift+backtab", command = "explorer_switch_pane_previous" },
  { key = "enter", command = "explorer_open" },
  { key = "ctrl+b", command = "explorer_toggle" },
  { key = "ctrl+u", command = "explorer_scroll_up_half_page" },
@@ -163,7 +166,8 @@ key_bindings = [
  { key = "up", command = "note_editor_cursor_up" },
  { key = "down", command = "note_editor_cursor_down" },
  { key = "t", command = "note_editor_toggle_explorer" },
- { key = "tab", command = "note_editor_switch_pane" },
+ { key = "tab", command = "note_editor_switch_pane_next" },
+ { key = "shift+backtab", command = "note_editor_switch_pane_previous" },
  { key = "ctrl+b", command = "note_editor_toggle_explorer" },
  { key = "ctrl+u", command = "note_editor_scroll_up_half_page" },
  { key = "ctrl+d", command = "note_editor_scroll_down_half_page" },

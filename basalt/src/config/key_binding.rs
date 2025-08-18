@@ -190,7 +190,8 @@ pub(crate) enum Command {
     ExplorerOpen,
     ExplorerSort,
     ExplorerToggle,
-    ExplorerSwitchPane,
+    ExplorerSwitchPaneNext,
+    ExplorerSwitchPanePrevious,
     ExplorerScrollUpOne,
     ExplorerScrollDownOne,
     ExplorerScrollUpHalfPage,
@@ -207,7 +208,8 @@ pub(crate) enum Command {
     NoteEditorScrollDownOne,
     NoteEditorScrollUpHalfPage,
     NoteEditorScrollDownHalfPage,
-    NoteEditorSwitchPane,
+    NoteEditorSwitchPaneNext,
+    NoteEditorSwitchPanePrevious,
     NoteEditorToggleExplorer,
     NoteEditorCursorUp,
     NoteEditorCursorDown,
@@ -243,7 +245,10 @@ impl From<Command> for Message {
             Command::ExplorerOpen => Message::Explorer(explorer::Message::Open),
             Command::ExplorerSort => Message::Explorer(explorer::Message::Sort),
             Command::ExplorerToggle => Message::Explorer(explorer::Message::Toggle),
-            Command::ExplorerSwitchPane => Message::Explorer(explorer::Message::SwitchPane),
+            Command::ExplorerSwitchPaneNext => Message::Explorer(explorer::Message::SwitchPaneNext),
+            Command::ExplorerSwitchPanePrevious => {
+                Message::Explorer(explorer::Message::SwitchPanePrevious)
+            }
             Command::ExplorerScrollUpOne => {
                 Message::Explorer(explorer::Message::ScrollUp(ScrollAmount::One))
             }
@@ -284,7 +289,12 @@ impl From<Command> for Message {
             Command::NoteEditorScrollDownHalfPage => {
                 Message::NoteEditor(note_editor::Message::ScrollDown(ScrollAmount::HalfPage))
             }
-            Command::NoteEditorSwitchPane => Message::NoteEditor(note_editor::Message::SwitchPane),
+            Command::NoteEditorSwitchPaneNext => {
+                Message::NoteEditor(note_editor::Message::SwitchPaneNext)
+            }
+            Command::NoteEditorSwitchPanePrevious => {
+                Message::NoteEditor(note_editor::Message::SwitchPanePrevious)
+            }
             Command::NoteEditorCursorUp => Message::NoteEditor(note_editor::Message::CursorUp),
             Command::NoteEditorCursorDown => Message::NoteEditor(note_editor::Message::CursorDown),
             Command::NoteEditorToggleExplorer => {
