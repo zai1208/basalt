@@ -240,6 +240,11 @@ impl<'text_buffer> EditorState<'text_buffer> {
         self
     }
 
+    pub fn set_row(mut self, row: usize) -> Self {
+        self.current_row = row;
+        self
+    }
+
     pub fn cursor_down(mut self) -> Self {
         let (row, _) = self.text_buffer.cursor();
         if row < self.text_buffer.lines().len().saturating_sub(1) {

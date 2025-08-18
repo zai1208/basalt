@@ -8,7 +8,7 @@ use serde::{
 };
 
 use crate::app::{
-    explorer, help_modal, note_editor, splash, vault_selector_modal, Message, ScrollAmount,
+    explorer, help_modal, note_editor, outline, splash, vault_selector_modal, Message, ScrollAmount,
 };
 use crate::config::ConfigError;
 
@@ -190,12 +190,22 @@ pub(crate) enum Command {
     ExplorerOpen,
     ExplorerSort,
     ExplorerToggle,
+    ExplorerToggleOutline,
     ExplorerSwitchPaneNext,
     ExplorerSwitchPanePrevious,
     ExplorerScrollUpOne,
     ExplorerScrollDownOne,
     ExplorerScrollUpHalfPage,
     ExplorerScrollDownHalfPage,
+
+    OutlineUp,
+    OutlineDown,
+    OutlineSelect,
+    OutlineExpand,
+    OutlineToggle,
+    OutlineToggleExplorer,
+    OutlineSwitchPaneNext,
+    OutlineSwitchPanePrevious,
 
     HelpModalScrollUpOne,
     HelpModalScrollDownOne,
@@ -211,6 +221,7 @@ pub(crate) enum Command {
     NoteEditorSwitchPaneNext,
     NoteEditorSwitchPanePrevious,
     NoteEditorToggleExplorer,
+    NoteEditorToggleOutline,
     NoteEditorCursorUp,
     NoteEditorCursorDown,
 
@@ -245,6 +256,7 @@ impl From<Command> for Message {
             Command::ExplorerOpen => Message::Explorer(explorer::Message::Open),
             Command::ExplorerSort => Message::Explorer(explorer::Message::Sort),
             Command::ExplorerToggle => Message::Explorer(explorer::Message::Toggle),
+            Command::ExplorerToggleOutline => Message::Explorer(explorer::Message::ToggleOutline),
             Command::ExplorerSwitchPaneNext => Message::Explorer(explorer::Message::SwitchPaneNext),
             Command::ExplorerSwitchPanePrevious => {
                 Message::Explorer(explorer::Message::SwitchPanePrevious)
@@ -260,6 +272,17 @@ impl From<Command> for Message {
             }
             Command::ExplorerScrollDownHalfPage => {
                 Message::Explorer(explorer::Message::ScrollDown(ScrollAmount::HalfPage))
+            }
+
+            Command::OutlineUp => Message::Outline(outline::Message::Up),
+            Command::OutlineDown => Message::Outline(outline::Message::Down),
+            Command::OutlineSelect => Message::Outline(outline::Message::Select),
+            Command::OutlineExpand => Message::Outline(outline::Message::Expand),
+            Command::OutlineToggle => Message::Outline(outline::Message::Toggle),
+            Command::OutlineToggleExplorer => Message::Outline(outline::Message::ToggleExplorer),
+            Command::OutlineSwitchPaneNext => Message::Outline(outline::Message::SwitchPaneNext),
+            Command::OutlineSwitchPanePrevious => {
+                Message::Outline(outline::Message::SwitchPanePrevious)
             }
 
             Command::HelpModalScrollUpOne => {
@@ -299,6 +322,9 @@ impl From<Command> for Message {
             Command::NoteEditorCursorDown => Message::NoteEditor(note_editor::Message::CursorDown),
             Command::NoteEditorToggleExplorer => {
                 Message::NoteEditor(note_editor::Message::ToggleExplorer)
+            }
+            Command::NoteEditorToggleOutline => {
+                Message::NoteEditor(note_editor::Message::ToggleOutline)
             }
             // Experimental
             Command::NoteEditorExperimentalSetEditMode => {

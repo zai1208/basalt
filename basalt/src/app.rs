@@ -14,6 +14,7 @@ use crate::{
     explorer::{Explorer, ExplorerState},
     help_modal::{HelpModal, HelpModalState},
     note_editor::{Editor, EditorState, Mode},
+    outline::{Outline, OutlineState},
     splash::{Splash, SplashState},
     statusbar::{StatusBar, StatusBarState},
     stylized_text::{self, FontStyle},
@@ -44,6 +45,7 @@ struct MainState<'a> {
     active_pane: ActivePane,
     explorer: ExplorerState<'a>,
     note_editor: EditorState<'a>,
+    outline: OutlineState,
     selected_note: Option<SelectedNote>,
 }
 
@@ -171,6 +173,7 @@ pub mod explorer {
         Open,
         Sort,
         Toggle,
+        ToggleOutline,
         SwitchPaneNext,
         SwitchPanePrevious,
         ScrollUp(ScrollAmount),
@@ -196,6 +199,27 @@ pub mod explorer {
     }
 }
 
+pub mod outline {
+    use crate::outline::OutlineState;
+
+    #[derive(Clone, Debug, PartialEq)]
+    pub enum Message {
+        Up,
+        Down,
+        Select,
+        Expand,
+        Toggle,
+        ToggleExplorer,
+        SwitchPaneNext,
+        SwitchPanePrevious,
+    }
+
+    pub fn update(message: Message, state: OutlineState) -> OutlineState {
+        match message {
+            Message::Up => state.previous(1),
+            Message::Down => state.next(1),
+            Message::Toggle => state.toggle(),
+            Message::SwitchPaneNext | Message::SwitchPanePrevious => {
                 if state.active {
                     state.set_active(false)
                 } else {
@@ -218,6 +242,7 @@ pub mod note_editor {
         SwitchPaneNext,
         SwitchPanePrevious,
         ToggleExplorer,
+        ToggleOutline,
         EditMode,
         ExitMode,
         ReadMode,
@@ -297,6 +322,7 @@ pub enum Message {
     Splash(splash::Message),
     Explorer(explorer::Message),
     NoteEditor(note_editor::Message),
+    Outline(outline::Message),
     HelpModal(help_modal::Message),
     VaultSelectorModal(vault_selector_modal::Message),
 }
@@ -307,6 +333,7 @@ pub enum ActivePane {
     Splash,
     Explorer,
     NoteEditor,
+    Outline,
     HelpModal,
     VaultSelectorModal,
 }
@@ -317,6 +344,7 @@ impl From<ActivePane> for &str {
             ActivePane::Splash => "Splash",
             ActivePane::Explorer => "Explorer",
             ActivePane::NoteEditor => "Note Editor",
+            ActivePane::Outline => "Outline",
             ActivePane::HelpModal => "Help",
             ActivePane::VaultSelectorModal => "Vault Selector",
         }
@@ -425,6 +453,7 @@ impl<'a> App<'a> {
                     _ => None
                 }
             },
+            ActivePane::Outline => self.config.outline.key_to_message(key.into()),
             ActivePane::HelpModal => self.config.help_modal.key_to_message(key.into()),
             ActivePane::VaultSelectorModal => self.config.vault_selector_modal.key_to_message(key.into()),
         }
@@ -570,8 +599,13 @@ impl<'a> App<'a> {
                             ..*main_state
                         },
                     }),
+                    explorer::Message::ToggleOutline => state.with_main_state(MainState {
+                        outline: main_state.outline.toggle(),
+                        ..*main_state
+                    }),
                     explorer::Message::Open => {
                         let selected_note = explorer.selected_note.clone().map(SelectedNote::from);
+
                         let note_editor = selected_note
                             .clone()
                             .map(|note| {
@@ -586,8 +620,15 @@ impl<'a> App<'a> {
                             })
                             .unwrap_or_default();
 
+                        let outline = OutlineState::new(
+                            note_editor.nodes(),
+                            note_editor.current_row,
+                            main_state.outline.is_open(),
+                        );
+
                         state.with_main_state(MainState {
                             explorer,
+                            outline,
                             note_editor,
                             selected_note,
                             ..*main_state
@@ -595,6 +636,58 @@ impl<'a> App<'a> {
                     }
                     _ => state.with_main_state(MainState {
                         explorer,
+                        ..*main_state
+                    }),
+                }
+            }
+            Message::Outline(message) => {
+                let ScreenState::Main(main_state) = screen else {
+                    return state;
+                };
+
+                let outline = outline::update(message.clone(), main_state.outline.clone());
+
+                match message {
+                    outline::Message::SwitchPaneNext => state.with_main_state(MainState {
+                        active_pane: ActivePane::Explorer,
+                        explorer: main_state.explorer.set_active(true),
+                        outline,
+                        ..*main_state
+                    }),
+                    outline::Message::SwitchPanePrevious => state.with_main_state(MainState {
+                        active_pane: ActivePane::NoteEditor,
+                        note_editor: main_state.note_editor.set_active(true),
+                        outline,
+                        ..*main_state
+                    }),
+                    outline::Message::Toggle => state.with_main_state(match outline.open {
+                        true => MainState {
+                            outline,
+                            ..*main_state
+                        },
+                        false => MainState {
+                            active_pane: ActivePane::NoteEditor,
+                            outline: outline.set_active(false),
+                            note_editor: main_state.note_editor.set_active(true),
+                            ..*main_state
+                        },
+                    }),
+                    outline::Message::Expand => state.with_main_state(MainState {
+                        outline: main_state.outline.toggle_item(),
+                        ..*main_state
+                    }),
+                    outline::Message::Select => state.with_main_state(MainState {
+                        note_editor: main_state.note_editor.set_row(
+                            outline
+                                .selected()
+                                .map(|item| item.get_range().start)
+                                .unwrap_or_default(),
+                        ),
+                        ..*main_state
+                    }),
+
+                    _ => state.with_main_state(MainState {
+                        outline,
                         ..*main_state
                     }),
                 }
@@ -682,6 +775,8 @@ impl<'a> App<'a> {
                         }
                         note_editor::Message::ExitMode if *mode == Mode::Edit => {
                             let note_editor = main_state.note_editor.exit_insert();
+                            let outline = main_state.outline.set_nodes(note_editor.nodes());
+
                             let selected_note = main_state
                                 .selected_note
                                 .map(|note| SelectedNote {
@@ -692,6 +787,7 @@ impl<'a> App<'a> {
 
                             return state.with_main_state(MainState {
                                 note_editor: note_editor.set_mode(Mode::View),
+                                outline,
                                 selected_note,
                                 ..*main_state
                             });
@@ -714,14 +810,26 @@ impl<'a> App<'a> {
                 }
 
                 match message {
-                    note_editor::Message::CursorUp => state.with_main_state(MainState {
-                        note_editor: main_state.note_editor.cursor_up(),
-                        ..*main_state
-                    }),
-                    note_editor::Message::CursorDown => state.with_main_state(MainState {
-                        note_editor: main_state.note_editor.cursor_down(),
-                        ..*main_state
-                    }),
+                    note_editor::Message::CursorUp => {
+                        let note_editor = main_state.note_editor.cursor_up();
+                        let outline = main_state.outline.select_at(note_editor.current_row);
+
+                        state.with_main_state(MainState {
+                            note_editor,
+                            outline,
+                            ..*main_state
+                        })
+                    }
+                    note_editor::Message::CursorDown => {
+                        let note_editor = main_state.note_editor.cursor_down();
+                        let outline = main_state.outline.select_at(note_editor.current_row);
+
+                        state.with_main_state(MainState {
+                            note_editor,
+                            outline,
+                            ..*main_state
+                        })
+                    }
                     note_editor::Message::ScrollUp(scroll_amount) if *mode != Mode::Edit => state
                         .with_main_state(MainState {
                             note_editor: main_state.note_editor.scroll_up(calc_scroll_amount(
@@ -747,6 +855,19 @@ impl<'a> App<'a> {
                             false => MainState {
                                 active_pane: ActivePane::Explorer,
                                 explorer: main_state.explorer.toggle().set_active(true),
+                                note_editor: main_state.note_editor.set_active(false),
+                                ..*main_state
+                            },
+                        }),
+                    note_editor::Message::ToggleOutline if *mode != Mode::Edit => state
+                        .with_main_state(match main_state.outline.open {
+                            true => MainState {
+                                outline: main_state.outline.toggle(),
+                                ..*main_state
+                            },
+                            false => MainState {
+                                active_pane: ActivePane::Outline,
+                                outline: main_state.outline.toggle().set_active(true),
                                 note_editor: main_state.note_editor.set_active(false),
                                 ..*main_state
                             },
@@ -794,10 +915,20 @@ impl<'a> App<'a> {
             (Constraint::Length(5), Constraint::Fill(1))
         };
 
-        let [explorer_pane, note] = Layout::horizontal([left, right]).areas(content);
+        let [explorer_pane, note, outline] = Layout::horizontal([
+            left,
+            right,
+            if state.outline.is_open() {
+                Constraint::Length(35)
+            } else {
+                Constraint::Length(4)
+            },
+        ])
+        .areas(content);
 
         Explorer::new().render(explorer_pane, buf, &mut state.explorer);
         Editor::default().render(note, buf, &mut state.note_editor);
+        Outline.render(outline, buf, &mut state.outline);
 
         let (_, counts) = state
             .selected_note

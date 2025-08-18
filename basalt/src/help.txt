@@ -67,17 +67,47 @@ INTERFACE
       ‹Ctrl+C›
       ‹?›         Show this help
       ‹Esc›       Cancel/close modals
-      ‹Tab›       Switch to note editor pane
       ‹k / j›     Move selection up / down
       ‹↑ / ↓›     Move selection up / down
       ‹s›         Toggle note sorting
       ‹t›         Toggle explorer panel visibility
       ‹↩ Enter›   Select and view the highlighted note
 
+      ‹Tab›       Switch to next pane
+      ‹Shift+Tab› Switch to previous pane
+
       ‹Ctrl+G›    Toggle vault selector modal
       ‹Ctrl+B›    Toggle explorer panel visibility
       ‹Ctrl+U›    Scroll up half a page
       ‹Ctrl+D›    Scroll down half a page
+
+  OUTLINE PANE
+
+    Browse and go to heading in a note.
+
+    The outline shows all headings in the note. You can navigate up and down
+    through the list, and press ‹Enter› to expand or collapse a heading. To
+    move the cursor to the heading in the document press ‹g›. The outline pane
+    can be toggled on/off to give more space to the note editor.
+
+    DEFAULT KEY BINDINGS
+
+      ‹q›,        Quit the application
+      ‹Ctrl+C›
+
+      ‹?›         Show this help
+      ‹Esc›       Cancel/close modals
+      ‹k / j›     Move selection up / down
+      ‹↑ / ↓›     Move selection up / down
+      ‹g›         Move editor cursor to currently selected heading
+      ‹↩ Enter›   Expand or collapse heading
+
+      ‹Tab›       Switch to next pane
+      ‹Shift+Tab› Switch to previous pane
+
+      ‹Ctrl+O›    Toggle outline pane visibility
+      ‹Ctrl+G›    Toggle vault selector modal
+      ‹Ctrl+B›    Toggle explorer pane visibility
 
   NOTE EDITOR PANE
 
@@ -189,6 +219,11 @@ CONFIGURATION
     explorer_up, explorer_down, explorer_open, explorer_sort, explorer_toggle,
     explorer_switch_pane, explorer_scroll_up_one, explorer_scroll_down_one,
     explorer_scroll_up_half_page, explorer_scroll_down_half_page
+
+  OUTLINE COMMANDS:
+    outline_up, outline_down, outline_toggle, outline_toggle_explorer,
+    outline_switch_pane_next, outline_switch_pane_previous outline_expand,
+    outline_select
 
   NOTE EDITOR COMMANDS:
     note_editor_cursor_up, note_editor_cursor_down, note_editor_scroll_up_one,

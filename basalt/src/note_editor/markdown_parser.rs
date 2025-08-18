@@ -90,7 +90,7 @@ pub enum TaskListItemKind {
     LooselyChecked,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Eq, Ord)]
 #[allow(missing_docs)]
 pub enum HeadingLevel {
     H1 = 1,
@@ -188,6 +188,12 @@ impl TextNode {
 /// A wrapper type holding a list of [`TextNode`]s.
 #[derive(Clone, Debug, PartialEq, Default)]
 pub struct Text(Vec<TextNode>);
+
+impl From<&Text> for String {
+    fn from(value: &Text) -> Self {
+        value.clone().into_iter().map(|node| node.content).collect()
+    }
+}
 
 impl From<Text> for String {
     fn from(value: Text) -> Self {

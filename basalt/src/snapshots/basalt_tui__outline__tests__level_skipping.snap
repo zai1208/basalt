@@ -1,0 +1,14 @@
+---
+source: basalt/src/outline.rs
+expression: terminal.backend()
+---
+"╭───────────────── ▶ Outline ╮"
+"│ ▾ Level 1                  │"
+"│ │ ▾ Level 3 (skipped 2)    │"
+"│ │ │   Level 5 (skipped 4)  │"
+"│ │ ▾ Level 2 (back to 2)    │"
+"│ │ │   Level 6 (jump to 6)  │"
+"│                            │"
+"│                            │"
+"│                            │"
+"╰────────────────────────────╯"

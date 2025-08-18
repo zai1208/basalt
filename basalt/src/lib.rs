@@ -3,6 +3,7 @@ pub mod config;
 pub mod explorer;
 pub mod help_modal;
 pub mod note_editor;
+pub mod outline;
 pub mod splash;
 pub mod statusbar;
 pub mod stylized_text;

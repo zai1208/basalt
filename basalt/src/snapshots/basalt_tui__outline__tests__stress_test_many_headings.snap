@@ -1,0 +1,14 @@
+---
+source: basalt/src/outline.rs
+expression: terminal.backend()
+---
+"╭Outline─────────────────────╮"
+"│ ▾ Root                     │"
+"│ │ ▾ Child 1                │"
+"│ │ │ ▾ Grandchild 1.1       │"
+"│ │ │ │ ▾ Great-grandchild 1.│"
+"│ │ │ │ │ ▾ Great-great-grand│"
+"│ │ │ │ │ │   Great-great-gre│"
+"│ │ │ │ │   Great-great-grand│"
+"│ │ │ │   Great-grandchild 1.│"
+"╰────────────────────────────╯"

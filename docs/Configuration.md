@@ -47,12 +47,24 @@ Each key mapping is associated with a specific 'pane' and becomes active when th
 # explorer_open: opens the selected note in note viewer
 # explorer_sort: toggles note and folder sorting between A-z and Z-a 
 # explorer_toggle: toggles explorer pane
+# explorer_toggle_outline: toggles outline pane
 # explorer_switch_pane_next: switches focus to next pane
 # explorer_switch_pane_previous: switches focus to previous pane
 # explorer_scroll_up_one: scrolls the selector up by one
 # explorer_scroll_down_one: scrolls the selector down by one
 # explorer_scroll_up_half_page: scrolls the selector up half a page
 # explorer_scroll_down_half_page: scrolls the selector down half a page
+#
+# Outline commands:
+#
+# outline_up: moves selector up
+# outline_down: moves selector down
+# outline_toggle: toggles outline panel
+# outline_toggle_explorer: toggles explorer pane
+# outline_switch_pane_next: switches focus to next pane
+# outline_switch_pane_previous: switches focus to previous pane
+# outline_expand: expands or collapses headings
+# outline_select: select heading and move note editor cursor to heading location
 #
 # Note editor commands:
 #
@@ -61,6 +73,7 @@ Each key mapping is associated with a specific 'pane' and becomes active when th
 # note_editor_scroll_up_half_page: scrolls up by half page
 # note_editor_scroll_down_half_page: scrolls down by half page
 # note_editor_toggle_explorer: toggles explorer pane
+# note_editor_toggle_outline: toggles outline pane
 # note_editor_switch_pane_next: switches focus to next pane
 # note_editor_switch_pane_previous: switches focus to previous pane
 #
@@ -114,6 +127,22 @@ key_bindings = [
  { key = "ctrl+b", command = "explorer_toggle" },
  { key = "ctrl+u", command = "explorer_scroll_up_half_page" },
  { key = "ctrl+d", command = "explorer_scroll_down_half_page" },
+ { key = "ctrl+o", command = "explorer_toggle_outline" },
+]
+
+[outline]
+key_bindings = [
+ { key = "k", command = "outline_up" },
+ { key = "j", command = "outline_down" },
+ { key = "up", command = "outline_up" },
+ { key = "down", command = "outline_down" },
+ { key = "ctrl+o", command = "outline_toggle" },
+ { key = "ctrl+b", command = "outline_toggle_explorer" },
+ { key = "t", command = "outline_toggle_explorer" },
+ { key = "tab", command = "outline_switch_pane_next" },
+ { key = "shift+backtab", command = "outline_switch_pane_previous" },
+ { key = "enter", command = "outline_expand" },
+ { key = "g", command = "outline_select" },
 ]
 
 [note_editor]
@@ -128,12 +157,17 @@ key_bindings = [
  { key = "ctrl+b", command = "note_editor_toggle_explorer" },
  { key = "ctrl+u", command = "note_editor_scroll_up_half_page" },
  { key = "ctrl+d", command = "note_editor_scroll_down_half_page" },
+ { key = "ctrl+o", command = "note_editor_toggle_outline" },
 
  # Experimental editor 
  { key = "i", command = "note_editor_experimental_set_edit_mode" },
  { key = "shift+r", command = "note_editor_experimental_set_read_mode" },
  { key = "ctrl+x", command = "note_editor_experimental_save" },
  { key = "esc", command = "note_editor_experimental_exit_mode" },
+ { key = "h", command = "note_editor_experimental_cursor_left" },
+ { key = "l", command = "note_editor_experimental_cursor_right" },
+ { key = "left", command = "note_editor_experimental_cursor_left" },
+ { key = "right", command = "note_editor_experimental_cursor_right" },
  # 'f' translates to arrow key right
  { key = "alt+f", command = "note_editor_experimental_cursor_word_forward" },
  # 'b' translates to arrow key left

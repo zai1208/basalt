@@ -1,0 +1,14 @@
+---
+source: basalt/src/outline.rs
+expression: terminal.backend()
+---
+"╭───────────────── ▶ Outline ╮"
+"│ ▾ Chapter 1                │"
+"│ │ ▾ Section 1.1            │"
+"│ │ │   Subsection 1.1.1     │"
+"│                            │"
+"│                            │"
+"│                            │"
+"│                            │"
+"│                            │"
+"╰────────────────────────────╯"

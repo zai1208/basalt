@@ -1,0 +1,14 @@
+---
+source: basalt/src/outline.rs
+expression: terminal.backend()
+---
+"╭Outline─────────────────────╮"
+"│ ▾ Heading with code and emp│"
+"│ │ ▾ Heading with links and │"
+"│ │ │ ▾ Heading with symbols:│"
+"│ │ │ │ ▾ Heading with unicod│"
+"│ │ │ │ │ ▾ Empty heading:   │"
+"│ │ │ │ │ │   Very long headi│"
+"│                            │"
+"│                            │"
+"╰────────────────────────────╯"
