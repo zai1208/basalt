@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.10.0 (2025-08-21)
+
+### Added
+
+- [Add `Outline` module](https://github.com/erikjuhani/basalt/commit/f02ac878102915d749ae79d60203ec512c5ef484)
+
+### Changed
+
+- [Change focus switch to support previous and next panes](https://github.com/erikjuhani/basalt/commit/d1cb962370cf03ec3f3da0527427d037fa81ccfd)
+
 ## 0.9.0 (2025-07-30)
 
 ### Added
