@@ -66,6 +66,7 @@ pub struct Config {
     pub global: ConfigSection,
     pub splash: ConfigSection,
     pub explorer: ConfigSection,
+    pub outline: ConfigSection,
     pub help_modal: ConfigSection,
     pub note_editor: ConfigSection,
     pub vault_selector_modal: ConfigSection,
@@ -84,6 +85,7 @@ impl From<TomlConfig> for Config {
             global: value.global.into(),
             splash: value.splash.into(),
             explorer: value.explorer.into(),
+            outline: value.outline.into(),
             help_modal: value.help_modal.into(),
             note_editor: value.note_editor.into(),
             vault_selector_modal: value.vault_selector_modal.into(),
@@ -185,6 +187,8 @@ struct TomlConfig {
     splash: TomlConfigSection,
     #[serde(default)]
     explorer: TomlConfigSection,
+    #[serde(default)]
+    outline: TomlConfigSection,
     #[serde(default)]
     help_modal: TomlConfigSection,
     #[serde(default)]

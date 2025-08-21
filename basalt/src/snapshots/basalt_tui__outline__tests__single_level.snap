@@ -1,9 +1,9 @@
 ---
-source: basalt/src/explorer.rs
+source: basalt/src/outline.rs
 expression: terminal.backend()
 ---
-"╭ Test ──────────────── ↑𝌆 ◀ ╮"
-"│                            │"
+"╭───────────────── ▶ Outline ╮"
+"│   Heading 1                │"
 "│                            │"
 "│                            │"
 "│                            │"

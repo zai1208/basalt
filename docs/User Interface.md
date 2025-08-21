@@ -19,6 +19,10 @@ In the future explorer will support creating folders, notes and renaming or movi
 
 Note editor is the 'main' pane that is used to view and modify the selected note.
 
+### Outline
+
+The Outline is the rightmost pane that allows navigation using the headings of the document.
+
 ## Components
 
 ### Status bar

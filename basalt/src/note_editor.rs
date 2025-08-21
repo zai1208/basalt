@@ -15,7 +15,7 @@ mod text_buffer;
 /// This crate uses [`pulldown_cmark`] to parse the markdown and enable the applicable features. This
 /// crate uses own intermediate types to provide the parsed markdown nodes.
 /// pub mod markdown;
-mod markdown_parser;
+pub mod markdown_parser;
 
 pub use editor::Editor;
 pub use state::{EditorState, Mode};
