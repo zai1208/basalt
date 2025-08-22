@@ -461,6 +461,39 @@ impl<'a> Iterator for Parser<'a> {
     }
 }
 
+fn parse_blockquote(events: &mut Peekable<Parser<'a>>, source_range: Range<usize>) -> Node {
+    let mut nodes = Parser::parse_events(events, Some(Tag::BlockQuote(None)));
+
+    // Detect callout marker in the first paragraph
+    let kind = if let Some(first_node) = nodes.first_mut() {
+        if let MarkdownNode::Paragraph { text } = &mut first_node.markdown_node {
+            let text_str = String::from(text).to_uppercase();
+            let marker = [
+                ("[!NOTE]", BlockQuoteKind::Note),
+                ("[!TIP]", BlockQuoteKind::Tip),
+                ("[!WARNING]", BlockQuoteKind::Warning),
+                ("[!IMPORTANT]", BlockQuoteKind::Important),
+                ("[!CAUTION]", BlockQuoteKind::Caution),
+            ];
+
+            for (prefix, k) in marker {
+                if text_str.starts_with(prefix) {
+                    // Strip marker from paragraph
+                    let stripped = String::from(text).get(prefix.len()..).unwrap_or("").trim_start();
+                    *text = stripped.into();
+                    break Some(k);
+                }
+            } 
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
+    Node::new(MarkdownNode::BlockQuote { kind, nodes }, source_range)
+}
+
 impl<'a> Parser<'a> {
     /// Creates a new [`Parser`] from a Markdown input string.
     ///
@@ -482,13 +515,7 @@ impl<'a> Parser<'a> {
         source_range: Range<usize>,
     ) -> Option<Node> {
         match tag {
-            Tag::BlockQuote(kind) => Some(Node::new(
-                MarkdownNode::BlockQuote {
-                    kind: kind.map(|kind| kind.into()),
-                    nodes: Parser::parse_events(events, Some(tag)),
-                },
-                source_range,
-            )),
+            Tag::BlockQuote(_) => Some(parse_blockquote(events, source_range)),
             Tag::List(start) => Some(Node::new(
                 MarkdownNode::List {
                     kind: start.map(ListKind::Ordered).unwrap_or(ListKind::Unordered),
