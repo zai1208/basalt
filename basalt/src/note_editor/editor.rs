@@ -270,7 +270,7 @@ impl Editor<'_> {
                 .first()
                 .and_then(|child| match &child.markdown_node {
                     markdown_parser::MarkdownNode::Paragraph { text } => {
-                        let text_str = text.content.clone();
+                        let text_str = text;
                         if text_str.starts_with("[!") && text_str.contains(']') {
                             Some(text_str)
                         } else {
