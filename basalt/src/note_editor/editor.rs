@@ -213,139 +213,126 @@ impl Editor<'_> {
     }
 
     fn render_markdown<'a>(
-    node: &markdown_parser::Node,
-    area: Rect,
-    prefix: Span<'a>,
-) -> Vec<Line<'a>> {
-    match &node.markdown_node {
-        markdown_parser::MarkdownNode::Paragraph { text } => {
-            Editor::wrap_with_prefix(
-                text.into(),
-                area.width.into(),
-                prefix.clone(),
-            )
-            .into_iter()
-            .chain(if prefix.to_string().is_empty() {
-                [Line::default()].to_vec()
-            } else {
-                vec![]
-            })
-            .collect::<Vec<_>>()
-        }
-
-        markdown_parser::MarkdownNode::Heading { level, text } => {
-            Editor::heading(*level, text.clone().into(), area.width.into())
-        }
-
-        markdown_parser::MarkdownNode::Item { text } => {
-            [Editor::item(
+        node: &markdown_parser::Node,
+        area: Rect,
+        prefix: Span<'a>,
+    ) -> Vec<Line<'a>> {
+        match node.markdown_node.clone() {
+            markdown_parser::MarkdownNode::Paragraph { text } => {
+                Editor::wrap_with_prefix(text.into(), area.width.into(), prefix.clone())
+                    .into_iter()
+                    .chain(if prefix.to_string().is_empty() {
+                        [Line::default()].to_vec()
+                    } else {
+                        vec![]
+                    })
+                    .collect::<Vec<_>>()
+            }
+            markdown_parser::MarkdownNode::Heading { level, text } => {
+                Editor::heading(level, text.into(), area.width.into())
+            }
+            markdown_parser::MarkdownNode::Item { text } => [Editor::item(
                 markdown_parser::ItemKind::Unordered,
-                Editor::text_to_spans(text.clone()),
+                Editor::text_to_spans(text),
                 prefix,
             )]
-            .to_vec()
-        }
-
-        markdown_parser::MarkdownNode::TaskListItem { kind, text } => {
-            [Editor::task(*kind, Editor::text_to_spans(text.clone()), prefix)].to_vec()
-        }
-
-        markdown_parser::MarkdownNode::CodeBlock { text, .. } => {
-            [Line::from((0..area.width).map(|_| " ").collect::<String>()).bg(Color::Black)]
+            .to_vec(),
+            markdown_parser::MarkdownNode::TaskListItem { kind, text } => {
+                [Editor::task(kind, Editor::text_to_spans(text), prefix)].to_vec()
+            }
+            markdown_parser::MarkdownNode::CodeBlock { text, .. } => {
+                [Line::from((0..area.width).map(|_| " ").collect::<String>()).bg(Color::Black)]
+                    .into_iter()
+                    .chain(Editor::code_block(text, area.width.into()))
+                    .chain([Line::default()])
+                    .collect::<Vec<_>>()
+            }
+            markdown_parser::MarkdownNode::List { nodes, kind } => nodes
                 .into_iter()
-                .chain(Editor::code_block(text.clone(), area.width.into()))
-                .chain([Line::default()])
-                .collect::<Vec<_>>()
-        }
-
-        markdown_parser::MarkdownNode::List { nodes, kind } => {
-            nodes
-                .iter()
                 .enumerate()
-                .flat_map(|(i, child)| match &child.markdown_node {
+                .flat_map(|(i, child)| match child.markdown_node {
                     markdown_parser::MarkdownNode::TaskListItem { kind, text } => {
-                        [Editor::task(*kind, Editor::text_to_spans(text.clone()), prefix.clone())]
-                            .to_vec()
+                        [Editor::task(kind, Editor::text_to_spans(text), prefix.clone())].to_vec()
                     }
                     markdown_parser::MarkdownNode::Item { text } => {
                         let item = match kind {
                             markdown_parser::ListKind::Ordered(start) => Editor::item(
                                 markdown_parser::ItemKind::Ordered(start + i as u64),
-                                Editor::text_to_spans(text.clone()),
+                                Editor::text_to_spans(text),
                                 prefix.clone(),
                             ),
                             _ => Editor::item(
                                 markdown_parser::ItemKind::Unordered,
-                                Editor::text_to_spans(text.clone()),
+                                Editor::text_to_spans(text),
                                 prefix.clone(),
                             ),
                         };
                         [item].to_vec()
                     }
-                    _ => Editor::render_markdown(child, area, Span::from(format!("  {prefix}"))),
+                    _ => Editor::render_markdown(&child, area, Span::from(format!("  {prefix}"))),
                 })
                 .chain(if prefix.to_string().is_empty() {
                     [Line::default()].to_vec()
                 } else {
                     vec![]
                 })
-                .collect::<Vec<Line<'a>>>()
-        }
-
-        markdown_parser::MarkdownNode::BlockQuote { nodes, .. } => {
-            let symbols = Self::default_callout_symbols();
-
-            // Extract first paragraph text to detect callout type
-            let first_line = nodes
-                .first()
-                .and_then(|n| {
-                    if let markdown_parser::MarkdownNode::Paragraph { text } = &n.markdown_node {
-                        Some(text)
+                .collect::<Vec<Line<'a>>>(),
+    
+            markdown_parser::MarkdownNode::BlockQuote { nodes, .. } => {
+                let symbols = Self::default_callout_symbols();
+    
+                // Get the first line text to detect callout
+                let first_line: &markdown_parser::Text = nodes
+                    .first()
+                    .and_then(|n| {
+                        if let markdown_parser::MarkdownNode::Paragraph { text } = &n.markdown_node {
+                            Some(text)
+                        } else {
+                            None
+                        }
+                    })
+                    .unwrap_or(&[]);
+    
+                // Convert first line text to string
+                let first_line_str = first_line
+                    .iter()
+                    .map(|t| t.content.as_str())
+                    .collect::<String>();
+    
+                let callout_type = Self::parse_callout_type(&first_line_str);
+    
+                let callout_prefix = callout_type
+                    .as_ref()
+                    .and_then(|kind| symbols.get(kind.as_str()))
+                    .map(|s| format!("┃ {} ", s))
+                    .unwrap_or_else(|| "┃ ".to_string());
+    
+                nodes
+                    .iter()
+                    .map(|child| {
+                        [Editor::render_markdown(
+                            child,
+                            area,
+                            Span::from(callout_prefix.clone().magenta()),
+                        )]
+                        .to_vec()
+                    })
+                    .enumerate()
+                    .flat_map(|(i, mut line_blocks)| {
+                        if i != 0 && i != nodes.len() {
+                            line_blocks.insert(0, [Line::from("┃ ").magenta()].to_vec());
+                        }
+                        line_blocks.into_iter().flatten().collect::<Vec<_>>()
+                    })
+                    .chain(if callout_prefix.is_empty() {
+                        [Line::default()].to_vec()
                     } else {
-                        None
-                    }
-                })
-                .unwrap_or(&vec![]);
-
-            let first_line_str = first_line
-                .iter()
-                .map(|t| t.content.as_str())
-                .collect::<String>();
-
-            let callout_type = Self::parse_callout_type(&first_line_str);
-
-            let callout_prefix = callout_type
-                .as_ref()
-                .and_then(|kind| symbols.get(kind.as_str()))
-                .map(|s| format!("┃ {} ", s))
-                .unwrap_or_else(|| "┃ ".to_string());
-
-            nodes
-                .iter()
-                .map(|child| {
-                    [Editor::render_markdown(
-                        child,
-                        area,
-                        Span::from(callout_prefix.clone().magenta()),
-                    )]
-                    .to_vec()
-                })
-                .enumerate()
-                .flat_map(|(i, mut line_blocks)| {
-                    if i != 0 && i != nodes.len() {
-                        line_blocks.insert(0, [Line::from("┃ ").magenta()].to_vec());
-                    }
-                    line_blocks.into_iter().flatten().collect::<Vec<_>>()
-                })
-                .chain(if callout_prefix.is_empty() {
-                    [Line::default()].to_vec()
-                } else {
-                    vec![]
-                })
-                .collect::<Vec<Line<'a>>>()
+                        vec![]
+                    })
+                    .collect::<Vec<Line<'a>>>()
+                }
             }
         }
-    }
 }
 
 impl<'text_buffer> StatefulWidget for Editor<'text_buffer> {
