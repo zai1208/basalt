@@ -461,48 +461,42 @@ impl<'a> Iterator for Parser<'a> {
     }
 }
 
-fn parse_blockquote<'a>(
-    events: &mut Peekable<Parser<'a>>,
-    source_range: Range<usize>,
-) -> Node {
-    let mut nodes = Parser::parse_events(events, Some(Tag::BlockQuote(None)));
+fn parse_blockquote(events: &mut Vec<Event>, source_range: Range<usize>) -> Node {
+    let mut nodes = Parser::parse_events(events, None);
 
-    let mut kind = BlockQuoteKind::None;
+    let mut kind: Option<BlockQuoteKind> = None;
 
-    if let Some(first_node) = nodes.first_mut() {
-        if let MarkdownNode::Paragraph { text } = &mut first_node.markdown_node {
-            let text_str = String::from(&*text).to_uppercase();
+    if let Some(Node {
+        value: MarkdownNode::Paragraph { nodes: para_nodes },
+        ..
+    }) = nodes.first_mut()
+    {
+        if let Some(Node {
+            value: MarkdownNode::Text { ref mut text, .. },
+            ..
+        }) = para_nodes.first_mut()
+        {
+            let stripped = text.trim();
 
-            let marker = [
-                ("[!NOTE]", BlockQuoteKind::Note),
-                ("[!TIP]", BlockQuoteKind::Tip),
-                ("[!IMPORTANT]", BlockQuoteKind::Important),
-                ("[!WARNING]", BlockQuoteKind::Warning),
-                ("[!CAUTION]", BlockQuoteKind::Caution),
-            ];
-
-            if let Some((prefix, k)) = marker.iter().find(|(prefix, _)| text_str.starts_with(prefix)) {
-                // Strip the marker out of the paragraph text
-                let stripped = String::from(&*text)
-                    .get(prefix.len()..)
-                    .unwrap_or("")
-                    .trim_start()
-                    .to_string();
-
-                *text = markdown_parser::Text::from(stripped);
-                kind = *k;
+            if stripped == "[!note]" {
+                kind = Some(BlockQuoteKind::Note);
+                *text = Text::from(""); // blank it out
+            } else if stripped == "[!tip]" {
+                kind = Some(BlockQuoteKind::Tip);
+                *text = Text::from("");
             }
         }
     }
 
     Node::new(
         MarkdownNode::BlockQuote {
-            kind: Some(kind),
+            kind: kind.map(|k| k.into()), // still an Option
             nodes,
         },
         source_range,
     )
 }
+
 
 
 impl<'a> Parser<'a> {
