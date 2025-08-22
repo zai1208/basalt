@@ -461,7 +461,10 @@ impl<'a> Iterator for Parser<'a> {
     }
 }
 
-fn parse_blockquote(events: &mut Vec<Event>, source_range: Range<usize>) -> Node {
+fn parse_blockquote<'a>(
+    events: &mut Peekable<Parser<'a>>,
+    source_range: Range<usize>,
+) -> Node {
     let mut nodes = Parser::parse_events(events, None);
 
     let mut kind: Option<BlockQuoteKind> = None;
