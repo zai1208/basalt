@@ -121,14 +121,39 @@ impl Editor<'_> {
         map
     }
 
-    fn parse_callout_type(text: &str) -> Option<String> {
-        if let Some(start) = text.find("[!") {
-            if let Some(end) = text.find(']') {
-                return Some(text[start + 2..end].trim().to_string());
+    fn parse_blockquote(events: &mut Peekable<Parser<'a>>, source_range: Range<usize>) -> Node {
+        let mut nodes = Parser::parse_events(events, Some(Tag::BlockQuote(None)));
+    
+        // Detect callout marker in the first paragraph
+        let kind = if let Some(first_node) = nodes.first_mut() {
+            if let MarkdownNode::Paragraph { text } = &mut first_node.markdown_node {
+                let text_str = String::from(text).to_uppercase();
+                let marker = [
+                    ("[!NOTE]", BlockQuoteKind::Note),
+                    ("[!TIP]", BlockQuoteKind::Tip),
+                    ("[!WARNING]", BlockQuoteKind::Warning),
+                    ("[!IMPORTANT]", BlockQuoteKind::Important),
+                    ("[!CAUTION]", BlockQuoteKind::Caution),
+                ];
+    
+                for (prefix, k) in marker {
+                    if text_str.starts_with(prefix) {
+                        // Strip marker from paragraph
+                        let stripped = String::from(text).get(prefix.len()..).unwrap_or("").trim_start();
+                        *text = stripped.into();
+                        break Some(k);
+                    }
+                } 
+            } else {
+                None
             }
-        }
-        None
+        } else {
+            None
+        };
+    
+        Node::new(MarkdownNode::BlockQuote { kind, nodes }, source_range)
     }
+
 
     fn text_to_spans<'a>(text: markdown_parser::Text) -> Vec<Span<'a>> {
         text.into_iter()
