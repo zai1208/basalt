@@ -281,7 +281,7 @@ impl Editor<'_> {
             markdown_parser::MarkdownNode::BlockQuote { nodes, .. } => {
                 let symbols = Self::default_callout_symbols();
     
-                // Get the first line text to detect callout
+                // Assuming Text implements Default
                 let first_line: &markdown_parser::Text = nodes
                     .first()
                     .and_then(|n| {
@@ -291,14 +291,14 @@ impl Editor<'_> {
                             None
                         }
                     })
-                    // Use an empty vector reference of the right type
-                    .unwrap_or(&Vec::new());
+                    .unwrap_or(&markdown_parser::Text::default()); // use Default implementation
                 
-                // Convert first line text to string
+                // Convert first line to string
                 let first_line_str = first_line
-                    .iter()
+                    .iter()                    // only works if Text implements Deref<Target=[TextFragment]>
                     .map(|t| t.content.as_str())
                     .collect::<String>();
+
     
                 let callout_type = Self::parse_callout_type(&first_line_str);
     
