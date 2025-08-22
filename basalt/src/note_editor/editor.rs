@@ -38,6 +38,7 @@
 //! ┃
 //! ┃ - Doug Engelbart, 1961
 use std::marker::PhantomData;
+use std::collections::HashMap;
 
 use ratatui::{
     buffer::Buffer,
@@ -108,6 +109,25 @@ impl Editor<'_> {
                     .collect::<Vec<_>>(),
             ),
         }
+    }
+
+    fn default_callout_symbols() -> HashMap<&'static str, &'static str> {
+        let mut map = HashMap::new();
+        map.insert("Note", "ⓘ");
+        map.insert("Warning", "⚠");
+        map.insert("Tip", "☆");
+        map.insert("Important", "‼");
+        map.insert("Caution", "⊗");
+        map
+    }
+
+    fn parse_callout_type(text: &str) -> Option<String> {
+        if let Some(start) = text.find("[!") {
+            if let Some(end) = text.find(']') {
+                return Some(text[start + 2..end].trim().to_string());
+            }
+        }
+        None
     }
 
     fn text_to_spans<'a>(text: markdown_parser::Text) -> Vec<Span<'a>> {
@@ -263,87 +283,43 @@ impl Editor<'_> {
                 })
                 .collect::<Vec<Line<'a>>>(),
 
-            // Callout block quotes
             markdown_parser::MarkdownNode::BlockQuote { nodes, .. } => {
-                // Check if the first node is a paragraph with callout syntax
-                let is_callout = nodes
-                .first()
-                .and_then(|child| match &child.markdown_node {
-                    markdown_parser::MarkdownNode::Paragraph { text } => {
-                        let text_str = text;
-                        if text_str.starts_with("[!") && text_str.contains(']') {
-                            Some(text_str)
-                        } else {
-                            None
-                        }
-                    },
-                    _ => None,
-                });
-
-                if let Some(callout_header) = is_callout {
-                    // Parse callout type
-                    let end = callout_header.find(']').unwrap_or(callout_header.len());
-                    let callout_type = &callout_header[2..end].to_lowercase();
-
-                    let (icon, color) = match callout_type.as_str() {
-                        "note"      => ("ⓘ", Color::Blue),
-                        "warning"   => ("⚠", Color::Yellow),
-                        "tip"       => ("☆", Color::Green),
-                        "important" => ("‼", Color::Red),
-                        "quote"     => ("❞", Color::Gray),
-                        _           => ("❞", Color::Gray), // fallback to quote
-                    };
-
-                    // Render the callout header
-                    let mut result = Vec::new();
-                    result.push(
-                        Line::from(vec![
-                            Span::from(format!("{icon} ")).fg(color).bold(),
-                            Span::from(format!("{}:", callout_type.to_uppercase())).fg(color).bold(),
-                        ])
-                    );
-
-                    // Render the rest of the nodes, skipping the header paragraph
-                    for child in nodes.iter().skip(1) {
-                        let child_lines = Editor::render_markdown(
+                let symbols = default_callout_symbols();
+            
+                // Get the first line text to detect callout
+                let first_line = if let Some(first_node) = nodes.first() {
+                    if let markdown_parser::MarkdownNode::Paragraph { text, .. } = first_node {
+                        text
+                    } else { "" }
+                } else { "" };
+            
+                let callout_type = parse_callout_type(first_line);
+                let prefix = callout_type
+                    .as_ref()
+                    .and_then(|kind| symbols.get(kind.as_str()))
+                    .map(|s| format!("┃ {} ", s))
+                    .unwrap_or_else(|| "┃ ".to_string());
+            
+                nodes
+                    .iter()
+                    .map(|child| {
+                        [Editor::render_markdown(
                             child,
                             area,
-                            Span::from("┃ ").fg(color)
-                        );
-                        result.extend(child_lines);
+                            Span::from(prefix.clone().magenta()),
+                        )]
+                        .to_vec()
+                    })
+                    .enumerate()
+                    .flat_map(|(i, mut line_blocks)| {
+                        if i != 0 && i != nodes.len() {
+                            line_blocks.insert(0, [Line::from("┃ ").magenta()].to_vec());
+                        }
+                        line_blocks.into_iter().flatten().collect::<Vec<_>>()
+                    })
+                    .chain(if prefix.is_empty() { [Line::default()].to_vec() } else { [].to_vec() })
+                    .collect::<Vec<Line<'a>>>(),
                     }
-
-                    // Extra spacing after callout
-                    result.push(Line::default());
-                    result
-                } else {
-                    // Regular blockquote rendering
-                    nodes
-                        .iter()
-                        .map(|child| {
-                            [Editor::render_markdown(
-                                child,
-                                area,
-                                Span::from(format!("{prefix}┃ ")).magenta(),
-                            )]
-                            .to_vec()
-                        })
-                        .enumerate()
-                        .flat_map(|(i, mut line_blocks)| {
-                            if i != 0 && i != nodes.len() {
-                                line_blocks.insert(
-                                    0,
-                                    [Line::from(format!("{prefix}┃ ")).magenta()].to_vec(),
-                                );
-                            }
-                            line_blocks.into_iter().flatten().collect::<Vec<_>>()
-                        })
-                        .chain(if prefix.to_string().is_empty() {
-                            [Line::default()].to_vec()
-                        } else {
-                            [].to_vec()
-                        })
-                        .collect::<Vec<Line<'a>>>()
                 }
             }
         }
