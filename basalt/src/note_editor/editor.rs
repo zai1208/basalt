@@ -291,8 +291,9 @@ impl Editor<'_> {
                             None
                         }
                     })
-                    .unwrap_or(&[]);
-    
+                    // Use an empty vector reference of the right type
+                    .unwrap_or(&Vec::new());
+                
                 // Convert first line text to string
                 let first_line_str = first_line
                     .iter()
