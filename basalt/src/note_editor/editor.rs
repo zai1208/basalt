@@ -281,7 +281,7 @@ impl Editor<'_> {
             markdown_parser::MarkdownNode::BlockQuote { nodes, .. } => {
                 let symbols = Self::default_callout_symbols();
     
-                // Assuming Text implements Default
+                let default_text = markdown_parser::Text::default(); // lives long enough
                 let first_line: &markdown_parser::Text = nodes
                     .first()
                     .and_then(|n| {
@@ -291,10 +291,9 @@ impl Editor<'_> {
                             None
                         }
                     })
-                    .unwrap_or(&markdown_parser::Text::default()); // use Default implementation
+                    .unwrap_or(&default_text);
                 
-                // Convert first line to string
-                let first_line_str = String::from(first_line);
+                let first_line_str = String::from(first_line); // now safe
 
     
                 let callout_type = Self::parse_callout_type(&first_line_str);
