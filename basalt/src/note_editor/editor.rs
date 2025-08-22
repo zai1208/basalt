@@ -319,7 +319,7 @@ impl Editor<'_> {
                     })
                     .chain(if prefix.is_empty() { [Line::default()].to_vec() } else { [].to_vec() })
                     .collect::<Vec<Line<'a>>>()
-        }
+            } // <-- closes BlockQuote match arm
     }
 }
 
