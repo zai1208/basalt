@@ -294,7 +294,7 @@ impl Editor<'_> {
                     .unwrap_or(&markdown_parser::Text::default()); // use Default implementation
                 
                 // Convert first line to string
-                let first_line_str = first_line.0.iter().map(|t| t.content.as_str()).collect::<String>();
+                let first_line_str = String::from(first_line);
 
     
                 let callout_type = Self::parse_callout_type(&first_line_str);
