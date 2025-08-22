@@ -318,7 +318,8 @@ impl Editor<'_> {
                         line_blocks.into_iter().flatten().collect::<Vec<_>>()
                     })
                     .chain(if prefix.is_empty() { [Line::default()].to_vec() } else { [].to_vec() })
-                    .collect::<Vec<Line<'a>>>(),
+                    .collect::<Vec<Line<'a>>>()
+                }
             }
         }
     }
