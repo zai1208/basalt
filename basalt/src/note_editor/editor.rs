@@ -324,7 +324,7 @@ impl Editor<'_> {
                             [Editor::render_markdown(
                                 child,
                                 area,
-                                Span::from(prefix.to_string() + "┃ ").magenta(),
+                                Span::from(format!("{prefix}┃ ")).magenta(),
                             )]
                             .to_vec()
                         })
@@ -333,7 +333,7 @@ impl Editor<'_> {
                             if i != 0 && i != nodes.len() {
                                 line_blocks.insert(
                                     0,
-                                    [Line::from(prefix.to_string() + "┃ ").magenta()].to_vec(),
+                                    [Line::from(format!("{prefix}┃ ")).magenta()].to_vec(),
                                 );
                             }
                             line_blocks.into_iter().flatten().collect::<Vec<_>>()
