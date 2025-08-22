@@ -461,38 +461,49 @@ impl<'a> Iterator for Parser<'a> {
     }
 }
 
-fn parse_blockquote(events: &mut Peekable<Parser<'a>>, source_range: Range<usize>) -> Node {
+fn parse_blockquote<'a>(
+    events: &mut Peekable<Parser<'a>>,
+    source_range: Range<usize>,
+) -> Node {
     let mut nodes = Parser::parse_events(events, Some(Tag::BlockQuote(None)));
 
-    // Detect callout marker in the first paragraph
-    let kind = if let Some(first_node) = nodes.first_mut() {
+    let mut kind = BlockQuoteKind::None;
+
+    if let Some(first_node) = nodes.first_mut() {
         if let MarkdownNode::Paragraph { text } = &mut first_node.markdown_node {
-            let text_str = String::from(text).to_uppercase();
+            let text_str = String::from(&*text).to_uppercase();
+
             let marker = [
                 ("[!NOTE]", BlockQuoteKind::Note),
                 ("[!TIP]", BlockQuoteKind::Tip),
-                ("[!WARNING]", BlockQuoteKind::Warning),
                 ("[!IMPORTANT]", BlockQuoteKind::Important),
+                ("[!WARNING]", BlockQuoteKind::Warning),
                 ("[!CAUTION]", BlockQuoteKind::Caution),
             ];
 
-            for (prefix, k) in marker {
-                if text_str.starts_with(prefix) {
-                    // Strip marker from paragraph
-                    let stripped = String::from(text).get(prefix.len()..).unwrap_or("").trim_start();
-                    *text = stripped.into();
-                    break Some(k);
-                }
-            } 
-        } else {
-            None
-        }
-    } else {
-        None
-    };
+            if let Some((prefix, k)) = marker.iter().find(|(prefix, _)| text_str.starts_with(prefix)) {
+                // Strip the marker out of the paragraph text
+                let stripped = String::from(&*text)
+                    .get(prefix.len()..)
+                    .unwrap_or("")
+                    .trim_start()
+                    .to_string();
 
-    Node::new(MarkdownNode::BlockQuote { kind, nodes }, source_range)
+                *text = markdown_parser::Text::from(stripped);
+                kind = *k;
+            }
+        }
+    }
+
+    Node::new(
+        MarkdownNode::BlockQuote {
+            kind: Some(kind),
+            nodes,
+        },
+        source_range,
+    )
 }
+
 
 impl<'a> Parser<'a> {
     /// Creates a new [`Parser`] from a Markdown input string.
