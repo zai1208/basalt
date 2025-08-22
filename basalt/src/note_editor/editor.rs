@@ -283,43 +283,42 @@ impl Editor<'_> {
                 })
                 .collect::<Vec<Line<'a>>>(),
 
-            markdown_parser::MarkdownNode::BlockQuote { nodes, .. } => {
-                let symbols = default_callout_symbols();
-            
-                // Get the first line text to detect callout
-                let first_line = if let Some(first_node) = nodes.first() {
-                    if let markdown_parser::MarkdownNode::Paragraph { text, .. } = first_node {
-                        text
-                    } else { "" }
-                } else { "" };
-            
-                let callout_type = parse_callout_type(first_line);
-                let prefix = callout_type
-                    .as_ref()
-                    .and_then(|kind| symbols.get(kind.as_str()))
-                    .map(|s| format!("┃ {} ", s))
-                    .unwrap_or_else(|| "┃ ".to_string());
-            
-                nodes
-                    .iter()
-                    .map(|child| {
-                        [Editor::render_markdown(
-                            child,
-                            area,
-                            Span::from(prefix.clone().magenta()),
-                        )]
-                        .to_vec()
-                    })
-                    .enumerate()
-                    .flat_map(|(i, mut line_blocks)| {
-                        if i != 0 && i != nodes.len() {
-                            line_blocks.insert(0, [Line::from("┃ ").magenta()].to_vec());
-                        }
-                        line_blocks.into_iter().flatten().collect::<Vec<_>>()
-                    })
-                    .chain(if prefix.is_empty() { [Line::default()].to_vec() } else { [].to_vec() })
-                    .collect::<Vec<Line<'a>>>()
-            } // <-- closes BlockQuote match arm
+            // TODO: Support callout block quote types
+        markdown_parser::MarkdownNode::BlockQuote { nodes, .. } => {
+            let symbols = default_callout_symbols();
+            let first_line = if let Some(first_node) = nodes.first() {
+                if let markdown_parser::MarkdownNode::Paragraph { text, .. } = first_node {
+                    text
+                } else { "" }
+            } else { "" };
+
+            let callout_type = parse_callout_type(first_line);
+            let prefix = callout_type
+                .as_ref()
+                .and_then(|kind| symbols.get(kind.as_str()))
+                .map(|s| format!("┃ {} ", s))
+                .unwrap_or_else(|| "┃ ".to_string());
+    
+            nodes
+                .iter()
+                .map(|child| {
+                    [Editor::render_markdown(
+                        child,
+                        area,
+                        Span::from(prefix.clone().magenta()),
+                    )]
+                    .to_vec()
+                })
+                .enumerate()
+                .flat_map(|(i, mut line_blocks)| {
+                    if i != 0 && i != nodes.len() {
+                        line_blocks.insert(0, [Line::from("┃ ").magenta()].to_vec());
+                    }
+                    line_blocks.into_iter().flatten().collect::<Vec<_>>()
+                })
+                .chain(if prefix.is_empty() { [Line::default()].to_vec() } else { [].to_vec() })
+                .collect::<Vec<Line<'a>>>()
+            }
         }
     }
 }
