@@ -38,7 +38,6 @@
 //! ┃
 //! ┃ - Doug Engelbart, 1961
 use std::marker::PhantomData;
-use std::collections::HashMap;
 
 use ratatui::{
     buffer::Buffer,
@@ -110,50 +109,6 @@ impl Editor<'_> {
             ),
         }
     }
-
-    fn default_callout_symbols() -> HashMap<&'static str, &'static str> {
-        let mut map = HashMap::new();
-        map.insert("Note", "ⓘ");
-        map.insert("Warning", "⚠");
-        map.insert("Tip", "☆");
-        map.insert("Important", "‼");
-        map.insert("Caution", "⊗");
-        map
-    }
-
-    fn parse_blockquote(events: &mut Peekable<Parser<'a>>, source_range: Range<usize>) -> Node {
-        let mut nodes = Parser::parse_events(events, Some(Tag::BlockQuote(None)));
-    
-        // Detect callout marker in the first paragraph
-        let kind = if let Some(first_node) = nodes.first_mut() {
-            if let MarkdownNode::Paragraph { text } = &mut first_node.markdown_node {
-                let text_str = String::from(text).to_uppercase();
-                let marker = [
-                    ("[!NOTE]", BlockQuoteKind::Note),
-                    ("[!TIP]", BlockQuoteKind::Tip),
-                    ("[!WARNING]", BlockQuoteKind::Warning),
-                    ("[!IMPORTANT]", BlockQuoteKind::Important),
-                    ("[!CAUTION]", BlockQuoteKind::Caution),
-                ];
-    
-                for (prefix, k) in marker {
-                    if text_str.starts_with(prefix) {
-                        // Strip marker from paragraph
-                        let stripped = String::from(text).get(prefix.len()..).unwrap_or("").trim_start();
-                        *text = stripped.into();
-                        break Some(k);
-                    }
-                } 
-            } else {
-                None
-            }
-        } else {
-            None
-        };
-    
-        Node::new(MarkdownNode::BlockQuote { kind, nodes }, source_range)
-    }
-
 
     fn text_to_spans<'a>(text: markdown_parser::Text) -> Vec<Span<'a>> {
         text.into_iter()
@@ -249,7 +204,7 @@ impl Editor<'_> {
                     .chain(if prefix.to_string().is_empty() {
                         [Line::default()].to_vec()
                     } else {
-                        vec![]
+                        [].to_vec()
                     })
                     .collect::<Vec<_>>()
             }
@@ -265,6 +220,7 @@ impl Editor<'_> {
             markdown_parser::MarkdownNode::TaskListItem { kind, text } => {
                 [Editor::task(kind, Editor::text_to_spans(text), prefix)].to_vec()
             }
+            // TODO: Add lang support and syntax highlighting
             markdown_parser::MarkdownNode::CodeBlock { text, .. } => {
                 [Line::from((0..area.width).map(|_| " ").collect::<String>()).bg(Color::Black)]
                     .into_iter()
@@ -276,9 +232,12 @@ impl Editor<'_> {
                 .into_iter()
                 .enumerate()
                 .flat_map(|(i, child)| match child.markdown_node {
-                    markdown_parser::MarkdownNode::TaskListItem { kind, text } => {
-                        [Editor::task(kind, Editor::text_to_spans(text), prefix.clone())].to_vec()
-                    }
+                    markdown_parser::MarkdownNode::TaskListItem { kind, text } => [Editor::task(
+                        kind,
+                        Editor::text_to_spans(text),
+                        prefix.clone(),
+                    )]
+                    .to_vec(),
                     markdown_parser::MarkdownNode::Item { text } => {
                         let item = match kind {
                             markdown_parser::ListKind::Ordered(start) => Editor::item(
@@ -292,6 +251,7 @@ impl Editor<'_> {
                                 prefix.clone(),
                             ),
                         };
+
                         [item].to_vec()
                     }
                     _ => Editor::render_markdown(&child, area, Span::from(format!("  {prefix}"))),
@@ -299,62 +259,41 @@ impl Editor<'_> {
                 .chain(if prefix.to_string().is_empty() {
                     [Line::default()].to_vec()
                 } else {
-                    vec![]
+                    [].to_vec()
                 })
                 .collect::<Vec<Line<'a>>>(),
-    
-            markdown_parser::MarkdownNode::BlockQuote { nodes, .. } => {
-                let symbols = Self::default_callout_symbols();
-    
-                let default_text = markdown_parser::Text::default(); // lives long enough
-                let first_line: &markdown_parser::Text = nodes
-                    .first()
-                    .and_then(|n| {
-                        if let markdown_parser::MarkdownNode::Paragraph { text } = &n.markdown_node {
-                            Some(text)
-                        } else {
-                            None
-                        }
-                    })
-                    .unwrap_or(&default_text);
-                
-                let first_line_str = String::from(first_line); // now safe
 
-    
-                let callout_type = Self::parse_callout_type(&first_line_str);
-    
-                let callout_prefix = callout_type
-                    .as_ref()
-                    .and_then(|kind| symbols.get(kind.as_str()))
-                    .map(|s| format!("┃ {} ", s))
-                    .unwrap_or_else(|| "┃ ".to_string());
-    
-                nodes
-                    .iter()
-                    .map(|child| {
-                        [Editor::render_markdown(
-                            child,
-                            area,
-                            Span::from(callout_prefix.clone().magenta()),
-                        )]
-                        .to_vec()
-                    })
-                    .enumerate()
-                    .flat_map(|(i, mut line_blocks)| {
-                        if i != 0 && i != nodes.len() {
-                            line_blocks.insert(0, [Line::from("┃ ").magenta()].to_vec());
-                        }
-                        line_blocks.into_iter().flatten().collect::<Vec<_>>()
-                    })
-                    .chain(if callout_prefix.is_empty() {
-                        [Line::default()].to_vec()
-                    } else {
-                        vec![]
-                    })
-                    .collect::<Vec<Line<'a>>>()
-                }
-            }
+            // TODO: Support callout block quote types
+            markdown_parser::MarkdownNode::BlockQuote { nodes, .. } => nodes
+                .iter()
+                .map(|child| {
+                    // We need this to be a block of lines to make sure we enumarate and add
+                    // prefixed line breaks correctly.
+                    [Editor::render_markdown(
+                        child,
+                        area,
+                        Span::from(prefix.to_string() + "┃ ").magenta(),
+                    )]
+                    .to_vec()
+                })
+                .enumerate()
+                .flat_map(|(i, mut line_blocks)| {
+                    if i != 0 && i != nodes.len() {
+                        line_blocks.insert(
+                            0,
+                            [Line::from(prefix.to_string() + "┃ ").magenta()].to_vec(),
+                        );
+                    }
+                    line_blocks.into_iter().flatten().collect::<Vec<_>>()
+                })
+                .chain(if prefix.to_string().is_empty() {
+                    [Line::default()].to_vec()
+                } else {
+                    [].to_vec()
+                })
+                .collect::<Vec<Line<'a>>>(),
         }
+    }
 }
 
 impl<'text_buffer> StatefulWidget for Editor<'text_buffer> {
@@ -415,6 +354,7 @@ impl<'text_buffer> StatefulWidget for Editor<'text_buffer> {
                 //         col as u16
                 //     },
                 // ));
+
                 match (i == state.current_row, &state.mode) {
                     (true, Mode::Read) => {
                         let (row, _) = state.text_buffer().cursor();
@@ -592,7 +532,7 @@ mod tests {
 
             You can quote text by adding a > symbols before the text.
 
-            > Human beings face ever more complex and urgent problems, and their effectiveness in dealing with these problems is a matter that is critical to the stability and continued progress [...]
+            > Human beings face ever more complex and urgent problems, and their effectiveness in dealing with these problems is a matter that is critical to the stability and continued progress of society.
             >
             > - Doug Engelbart, 1961
             "#},
