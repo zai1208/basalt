@@ -267,18 +267,18 @@ impl Editor<'_> {
             markdown_parser::MarkdownNode::BlockQuote { nodes, .. } => {
                 // Check if the first node is a paragraph with callout syntax
                 let is_callout = nodes
-                    .first()
-                    .and_then(|child| match &child.markdown_node {
-                        markdown_parser::MarkdownNode::Paragraph { text } => {
-                            let text_str = text.to_string();
-                            if text_str.starts_with("[!") && text_str.contains(']') {
-                                Some(text_str)
-                            } else {
-                                None
-                            }
-                        },
-                        _ => None,
-                    });
+                .first()
+                .and_then(|child| match &child.markdown_node {
+                    markdown_parser::MarkdownNode::Paragraph { text } => {
+                        let text_str = format!("{text}");
+                        if text_str.starts_with("[!") && text_str.contains(']') {
+                            Some(text_str)
+                        } else {
+                            None
+                        }
+                    },
+                    _ => None,
+                });
 
                 if let Some(callout_header) = is_callout {
                     // Parse callout type
